@@ -1,4 +1,4 @@
-# Security Vulnerability Scanner
+# Cyber Punk (Security Vulnerability Scanner)
 
 A Claude Code plugin that automates security vulnerability analysis for any project.
 
