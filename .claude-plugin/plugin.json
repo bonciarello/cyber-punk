@@ -1,0 +1,21 @@
+{
+  "name": "security-vuln-scanner",
+  "version": "1.0.0",
+  "description": "Automated security vulnerability scanner: fetches CVE/CWE from NVD (NIST), scans code for vulnerable patterns across 9 languages, generates proof-of-concept exploit scripts, and applies fixes inline.",
+  "author": {
+    "name": "bonciarello"
+  },
+  "repository": "https://github.com/bonciarello/SkillCyberPunk",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "vulnerability",
+    "CVE",
+    "CWE",
+    "OWASP",
+    "penetration-testing",
+    "audit",
+    "exploit",
+    "NVD"
+  ]
+}

@@ -1,0 +1,2358 @@
+{
+  "CWE-89": {
+    "name": "SQL Injection",
+    "severity": "CRITICAL",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "query\\s*\\(\\s*[\\x60'\"].*\\$\\{",
+          "\\.query\\s*\\(\\s*['\"].*\\+\\s*req\\.",
+          "\\.query\\s*\\(\\s*['\"].*\\+\\s*(?:params|body|query)\\b",
+          "\\.raw\\s*\\(\\s*[\\x60'\"].*\\$\\{",
+          "execute\\s*\\(\\s*[\\x60'\"].*\\$\\{"
+        ],
+        "safe_alternatives": [
+          "Use parameterized queries: db.query('SELECT * FROM users WHERE id = ?', [userId])",
+          "Use an ORM like Sequelize, Knex, or Prisma with built-in parameterization",
+          "Use prepared statements with placeholder syntax ($1, ?, :name)"
+        ],
+        "false_positive_signals": [
+          "\\?\\s*[,\\)]",
+          "\\$\\d+\\s*[,\\)]",
+          "prepared|parameterized|sanitize"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "execute\\s*\\(\\s*f['\"]",
+          "execute\\s*\\(\\s*['\"].*\\.format\\(",
+          "execute\\s*\\(\\s*['\"].*%\\s*\\(",
+          "cursor\\.execute\\s*\\(\\s*['\"].*\\+",
+          "raw\\s*\\(\\s*f['\"].*SELECT",
+          "text\\s*\\(\\s*f['\"].*SELECT"
+        ],
+        "safe_alternatives": [
+          "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+          "Use SQLAlchemy ORM or Django ORM with built-in parameterization",
+          "Use query builder methods instead of raw SQL strings"
+        ],
+        "false_positive_signals": [
+          "%s\\s*[,\\)]",
+          "\\?\\s*[,\\)]",
+          "params=|parameters="
+        ]
+      },
+      "go": {
+        "patterns": [
+          "fmt\\.Sprintf\\s*\\(\\s*[\"\\x60].*SELECT",
+          "fmt\\.Sprintf\\s*\\(\\s*[\"\\x60].*INSERT",
+          "fmt\\.Sprintf\\s*\\(\\s*[\"\\x60].*UPDATE",
+          "fmt\\.Sprintf\\s*\\(\\s*[\"\\x60].*DELETE",
+          "db\\.Exec\\s*\\(\\s*fmt\\.Sprintf",
+          "db\\.Query\\s*\\(\\s*fmt\\.Sprintf"
+        ],
+        "safe_alternatives": [
+          "Use parameterized queries: db.Query('SELECT * FROM users WHERE id = $1', userID)",
+          "Use database/sql placeholders ($1, $2 for Postgres; ? for MySQL)",
+          "Use an ORM like GORM or sqlx with named parameters"
+        ],
+        "false_positive_signals": [
+          "\\$\\d+",
+          "\\?\\s*,\\s*\\w+",
+          "Prepare\\s*\\("
+        ]
+      },
+      "java": {
+        "patterns": [
+          "createQuery\\s*\\(\\s*\".*\\+",
+          "executeQuery\\s*\\(\\s*\".*\\+",
+          "executeUpdate\\s*\\(\\s*\".*\\+",
+          "Statement\\s.*execute\\s*\\(\\s*\".*\\+",
+          "jdbc.*\\+\\s*request\\.getParameter",
+          "nativeQuery.*\".*\\+"
+        ],
+        "safe_alternatives": [
+          "Use PreparedStatement with placeholders: ps = conn.prepareStatement('SELECT * FROM users WHERE id = ?')",
+          "Use JPA/Hibernate parameterized queries with :param or ?1 syntax",
+          "Use Spring Data JPA repository methods or @Query with parameter binding"
+        ],
+        "false_positive_signals": [
+          "PreparedStatement",
+          "setString|setInt|setLong|setParameter",
+          "CriteriaBuilder|CriteriaQuery"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "mysqli_query\\s*\\(.*\\$_",
+          "mysql_query\\s*\\(.*\\$_",
+          "->query\\s*\\(\\s*\".*\\.",
+          "->query\\s*\\(\\s*\".*\\$",
+          "->exec\\s*\\(\\s*\".*\\$"
+        ],
+        "safe_alternatives": [
+          "Use PDO prepared statements: $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id')",
+          "Use mysqli prepared statements with bind_param()",
+          "Use a framework ORM like Eloquent (Laravel) or Doctrine"
+        ],
+        "false_positive_signals": [
+          "prepare\\s*\\(",
+          "bindParam|bindValue|bind_param",
+          "placeholder|parameterized"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "\\.where\\s*\\(\\s*\".*#\\{",
+          "\\.find_by_sql\\s*\\(\\s*\".*#\\{",
+          "\\.execute\\s*\\(\\s*\".*#\\{",
+          "ActiveRecord::Base\\.connection\\.execute\\s*\\(",
+          "\\.select\\s*\\(\\s*\".*#\\{"
+        ],
+        "safe_alternatives": [
+          "Use ActiveRecord parameterized queries: User.where('id = ?', user_id)",
+          "Use hash conditions: User.where(id: user_id)",
+          "Use Arel for complex query building with automatic sanitization"
+        ],
+        "false_positive_signals": [
+          "\\.where\\s*\\(\\s*['\"].*\\?",
+          "sanitize_sql|sanitize",
+          "\\.where\\s*\\(\\s*\\w+:\\s"
+        ]
+      }
+    }
+  },
+  "CWE-79": {
+    "name": "Cross-site Scripting (XSS)",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "innerHTML\\s*=",
+          "outerHTML\\s*=",
+          "document\\.write\\s*\\(",
+          "document\\.writeln\\s*\\(",
+          "\\$\\(.*\\)\\.html\\s*\\(",
+          "dangerouslySetInnerHTML",
+          "v-html\\s*=",
+          "\\[innerHTML\\]\\s*="
+        ],
+        "safe_alternatives": [
+          "Use textContent or innerText instead of innerHTML",
+          "Use DOM APIs like createElement() and appendChild() to build elements",
+          "Use a framework's built-in escaping (React JSX, Angular template binding, Vue {{ }})",
+          "Sanitize HTML with DOMPurify before inserting: DOMPurify.sanitize(userInput)"
+        ],
+        "false_positive_signals": [
+          "DOMPurify\\.sanitize",
+          "textContent\\s*=",
+          "escapeHtml|escape_html|sanitize"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "Markup\\s*\\(\\s*f['\"]",
+          "\\|\\s*safe\\b",
+          "mark_safe\\s*\\(",
+          "render_template_string\\s*\\(",
+          "Markup\\s*\\(.*\\.format\\(",
+          "autoescape\\s*=\\s*False"
+        ],
+        "safe_alternatives": [
+          "Use Jinja2/Django template auto-escaping (enabled by default)",
+          "Use markupsafe.escape() for any user-supplied data in HTML context",
+          "Avoid mark_safe() and |safe filter on user-controlled data",
+          "Use bleach.clean() to sanitize HTML if rich text is needed"
+        ],
+        "false_positive_signals": [
+          "bleach\\.clean",
+          "escape\\s*\\(",
+          "autoescape\\s*=\\s*True"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "getWriter\\(\\)\\.print.*getParameter",
+          "getWriter\\(\\)\\.write.*getParameter",
+          "out\\.print.*getParameter",
+          "setAttribute\\s*\\(.*getParameter",
+          "\\$\\{param\\.",
+          "<%=.*request\\.getParameter"
+        ],
+        "safe_alternatives": [
+          "Use JSTL <c:out> tag or fn:escapeXml() for output encoding",
+          "Use OWASP Java Encoder: Encode.forHtml(userInput)",
+          "Use a templating engine with auto-escaping (Thymeleaf, Freemarker)",
+          "Apply Content-Security-Policy headers"
+        ],
+        "false_positive_signals": [
+          "escapeXml|escapeHtml|Encode\\.for",
+          "c:out",
+          "StringEscapeUtils\\.escapeHtml"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "echo\\s+\\$_(?:GET|POST|REQUEST|COOKIE)",
+          "print\\s+\\$_(?:GET|POST|REQUEST|COOKIE)",
+          "<\\?=\\s*\\$_(?:GET|POST|REQUEST)",
+          "echo\\s+\\$\\w+\\s*;",
+          "\\{!!\\s*\\$"
+        ],
+        "safe_alternatives": [
+          "Use htmlspecialchars($input, ENT_QUOTES, 'UTF-8') for output",
+          "Use Laravel's {{ }} Blade syntax (auto-escapes) instead of {!! !!}",
+          "Use a Content-Security-Policy header to mitigate XSS impact",
+          "Use strip_tags() when only plain text is needed"
+        ],
+        "false_positive_signals": [
+          "htmlspecialchars\\s*\\(",
+          "htmlentities\\s*\\(",
+          "e\\(\\$|strip_tags\\s*\\("
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "\\.html_safe",
+          "raw\\s*\\(",
+          "raw\\s+\\w+",
+          "content_tag.*\\.html_safe",
+          "<%==",
+          "render\\s+inline:"
+        ],
+        "safe_alternatives": [
+          "Use ERB's default escaping with <%= %> (not <%== %>)",
+          "Use sanitize() helper for allowing specific HTML tags",
+          "Avoid .html_safe on user-controlled strings",
+          "Use content_tag and tag helpers for building HTML safely"
+        ],
+        "false_positive_signals": [
+          "sanitize\\s*\\(",
+          "strip_tags\\s*\\(",
+          "ERB::Util\\.html_escape"
+        ]
+      }
+    }
+  },
+  "CWE-22": {
+    "name": "Path Traversal",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "readFile\\s*\\(.*req\\.",
+          "readFile\\s*\\(.*params\\.",
+          "readFileSync\\s*\\(.*\\+",
+          "createReadStream\\s*\\(.*\\+",
+          "path\\.join\\s*\\(.*req\\.",
+          "res\\.sendFile\\s*\\(.*req\\.",
+          "express\\.static\\s*\\(.*\\+"
+        ],
+        "safe_alternatives": [
+          "Use path.resolve() and verify the result starts with the intended base directory",
+          "Use path.normalize() and check for '..' components",
+          "Whitelist allowed file names rather than blacklisting patterns",
+          "Use express.static() with a fixed root and no user input in the path"
+        ],
+        "false_positive_signals": [
+          "path\\.resolve.*startsWith",
+          "path\\.normalize",
+          "whitelist|allowlist|safePath"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "open\\s*\\(.*request\\.",
+          "open\\s*\\(.*\\+.*\\)",
+          "os\\.path\\.join\\s*\\(.*request\\.",
+          "send_file\\s*\\(.*request\\.",
+          "send_from_directory\\s*\\(.*request\\.",
+          "shutil\\.copy.*request\\."
+        ],
+        "safe_alternatives": [
+          "Use os.path.realpath() and verify result is under the expected base directory",
+          "Use pathlib.Path.resolve() and check with is_relative_to()",
+          "Use send_from_directory() with a fixed directory and validated filename",
+          "Use werkzeug.utils.secure_filename() for uploaded file names"
+        ],
+        "false_positive_signals": [
+          "secure_filename",
+          "realpath.*startswith|is_relative_to",
+          "os\\.path\\.abspath.*startswith"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "os\\.Open\\s*\\(.*r\\.(?:URL|Form)",
+          "filepath\\.Join\\s*\\(.*r\\.(?:URL|Form)",
+          "ioutil\\.ReadFile\\s*\\(.*\\+",
+          "os\\.ReadFile\\s*\\(.*\\+",
+          "http\\.ServeFile\\s*\\(.*r\\."
+        ],
+        "safe_alternatives": [
+          "Use filepath.Clean() and verify the path is under the intended base directory",
+          "Use filepath.Rel() and check that it doesn't start with '..'",
+          "Use http.FileServer with http.Dir() rooted at a fixed directory",
+          "Validate that filepath.Clean(input) does not escape the base path"
+        ],
+        "false_positive_signals": [
+          "filepath\\.Clean",
+          "filepath\\.Rel",
+          "strings\\.HasPrefix.*filepath"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "new File\\s*\\(.*getParameter",
+          "new File\\s*\\(.*\\+",
+          "Paths\\.get\\s*\\(.*getParameter",
+          "FileInputStream\\s*\\(.*getParameter",
+          "getResourceAsStream\\s*\\(.*getParameter"
+        ],
+        "safe_alternatives": [
+          "Use Path.normalize() and verify with startsWith() against the base directory",
+          "Use java.nio.file.Path.toRealPath() and validate the canonical path",
+          "Use a whitelist of allowed file names or identifiers",
+          "Use FilenameUtils.getName() from Apache Commons IO to strip directory components"
+        ],
+        "false_positive_signals": [
+          "normalize\\(\\).*startsWith",
+          "getCanonicalPath.*startsWith",
+          "FilenameUtils\\.getName"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "file_get_contents\\s*\\(.*\\$_",
+          "fopen\\s*\\(.*\\$_",
+          "include\\s*\\(.*\\$_",
+          "require\\s*\\(.*\\$_",
+          "readfile\\s*\\(.*\\$_",
+          "file_get_contents\\s*\\(.*\\$\\w+\\s*\\."
+        ],
+        "safe_alternatives": [
+          "Use realpath() and verify the result starts with the expected base directory",
+          "Use basename() to strip directory components from filenames",
+          "Whitelist allowed file names instead of using user input directly",
+          "Use open_basedir PHP directive to restrict file access"
+        ],
+        "false_positive_signals": [
+          "realpath\\s*\\(",
+          "basename\\s*\\(",
+          "open_basedir"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "File\\.read\\s*\\(.*params",
+          "File\\.open\\s*\\(.*params",
+          "send_file\\s*\\(.*params",
+          "IO\\.read\\s*\\(.*params",
+          "File\\.join\\s*\\(.*params"
+        ],
+        "safe_alternatives": [
+          "Use File.expand_path() and verify the result is under the base directory",
+          "Use Pathname#realpath and check with #start_with?",
+          "Use ActiveStorage or CarrierWave for file handling with built-in path safety",
+          "Use send_file with a fixed base directory and sanitized filename"
+        ],
+        "false_positive_signals": [
+          "expand_path.*start_with",
+          "Pathname.*realpath",
+          "sanitize_filename|secure_filename"
+        ]
+      }
+    }
+  },
+  "CWE-78": {
+    "name": "OS Command Injection",
+    "severity": "CRITICAL",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "exec\\s*\\(\\s*[\\x60'\"].*\\$\\{",
+          "exec\\s*\\(.*\\+\\s*req\\.",
+          "execSync\\s*\\(\\s*[\\x60'\"].*\\$\\{",
+          "child_process\\.exec\\s*\\(",
+          "spawn\\s*\\(\\s*['\"](?:sh|bash|cmd)['\"].*\\+",
+          "eval\\s*\\(.*req\\."
+        ],
+        "safe_alternatives": [
+          "Use child_process.execFile() or spawn() with an argument array (no shell interpretation)",
+          "Use a library-specific API instead of shelling out (e.g., fs for file ops)",
+          "Whitelist allowed commands and arguments; reject unexpected input",
+          "Use shell-quote or shescape to escape arguments if shell is required"
+        ],
+        "false_positive_signals": [
+          "execFile\\s*\\(",
+          "spawn\\s*\\(.*\\[",
+          "shell:\\s*false"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "os\\.system\\s*\\(",
+          "os\\.popen\\s*\\(",
+          "subprocess\\.call\\s*\\(\\s*[f'\"]",
+          "subprocess\\.Popen\\s*\\(\\s*[f'\"]",
+          "subprocess\\.run\\s*\\(\\s*[f'\"]",
+          "subprocess\\..*shell\\s*=\\s*True",
+          "commands\\.getoutput\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use subprocess.run() with a list of arguments and shell=False (the default)",
+          "Use shlex.split() if you must parse a command string, but prefer list form",
+          "Use Python standard library functions instead of shell commands (shutil, os, pathlib)",
+          "Validate and whitelist allowed commands and arguments"
+        ],
+        "false_positive_signals": [
+          "shell\\s*=\\s*False",
+          "subprocess\\.run\\s*\\(\\s*\\[",
+          "shlex\\.quote|shlex\\.split"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "exec\\.Command\\s*\\(\\s*\"(?:sh|bash|cmd)\".*\\+",
+          "exec\\.Command\\s*\\(\\s*\"(?:sh|bash)\".*-c",
+          "exec\\.CommandContext\\s*\\(.*\"(?:sh|bash)\".*-c",
+          "os\\.StartProcess\\s*\\(.*\\+"
+        ],
+        "safe_alternatives": [
+          "Use exec.Command() with separate arguments (no shell invocation)",
+          "Avoid passing user input through sh -c; use direct execution",
+          "Whitelist allowed commands and validate arguments",
+          "Use Go standard library instead of shelling out (os, io, net/http)"
+        ],
+        "false_positive_signals": [
+          "exec\\.Command\\s*\\(\\s*\"\\w+\"\\s*,",
+          "exec\\.Command\\s*\\([^\"]*\\barg",
+          "escapeshell|sanitize"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(.*\\+",
+          "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(.*getParameter",
+          "ProcessBuilder\\s*\\(.*\\+.*getParameter",
+          "ProcessBuilder\\s*\\(\\s*\"(?:sh|bash|cmd)\"",
+          "new ProcessBuilder\\s*\\(.*Arrays\\.asList.*\\+"
+        ],
+        "safe_alternatives": [
+          "Use ProcessBuilder with a list of arguments (no shell invocation)",
+          "Validate and whitelist allowed commands and arguments",
+          "Use Java standard library APIs instead of shell commands",
+          "If shell is needed, rigorously validate every argument against a whitelist"
+        ],
+        "false_positive_signals": [
+          "ProcessBuilder\\s*\\(\\s*Arrays\\.asList\\s*\\(\\s*\"\\w+\"",
+          "escapeshell|sanitize",
+          "allowedCommands|commandWhitelist"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "exec\\s*\\(.*\\$_",
+          "system\\s*\\(.*\\$_",
+          "passthru\\s*\\(.*\\$_",
+          "shell_exec\\s*\\(.*\\$_",
+          "popen\\s*\\(.*\\$_",
+          "proc_open\\s*\\(.*\\$_",
+          "\\x60.*\\$_(?:GET|POST|REQUEST)"
+        ],
+        "safe_alternatives": [
+          "Use escapeshellarg() and escapeshellcmd() for any user input in commands",
+          "Use PHP built-in functions instead of shell commands where possible",
+          "Whitelist allowed commands and arguments",
+          "Use proc_open() with explicit argument separation"
+        ],
+        "false_positive_signals": [
+          "escapeshellarg\\s*\\(",
+          "escapeshellcmd\\s*\\(",
+          "allowed_commands|whitelist"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "system\\s*\\(.*params",
+          "system\\s*\\(\\s*\".*#\\{",
+          "exec\\s*\\(\\s*\".*#\\{",
+          "\\x60.*#\\{.*params",
+          "%x\\{.*#\\{",
+          "Kernel\\.system\\s*\\(.*#\\{",
+          "IO\\.popen\\s*\\(.*#\\{"
+        ],
+        "safe_alternatives": [
+          "Use system() or exec() with multiple arguments: system('ls', '-la', user_dir)",
+          "Use Open3.capture3 with argument arrays",
+          "Use Shellwords.escape() if shell interpolation is needed",
+          "Use Ruby standard library instead of shelling out (FileUtils, etc.)"
+        ],
+        "false_positive_signals": [
+          "Shellwords\\.escape",
+          "system\\s*\\(\\s*\"\\w+\"\\s*,",
+          "Open3\\.capture"
+        ]
+      }
+    }
+  },
+  "CWE-502": {
+    "name": "Deserialization of Untrusted Data",
+    "severity": "CRITICAL",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "eval\\s*\\(\\s*req\\.",
+          "eval\\s*\\(\\s*(?:body|params|query)",
+          "new Function\\s*\\(.*req\\.",
+          "unserialize\\s*\\(",
+          "node-serialize",
+          "js-yaml\\.load\\s*\\(",
+          "serialize-javascript.*\\beval"
+        ],
+        "safe_alternatives": [
+          "Use JSON.parse() for JSON data (safe against code execution)",
+          "Use js-yaml.safeLoad() instead of js-yaml.load()",
+          "Never use eval() or new Function() on untrusted input",
+          "Validate and sanitize input before processing"
+        ],
+        "false_positive_signals": [
+          "JSON\\.parse\\s*\\(",
+          "safeLoad\\s*\\(",
+          "schema:\\s*yaml\\.SAFE_SCHEMA"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "pickle\\.loads?\\s*\\(",
+          "cPickle\\.loads?\\s*\\(",
+          "shelve\\.open\\s*\\(",
+          "yaml\\.load\\s*\\(",
+          "yaml\\.unsafe_load\\s*\\(",
+          "marshal\\.loads?\\s*\\(",
+          "jsonpickle\\.decode\\s*\\(",
+          "dill\\.loads?\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use json.loads() instead of pickle for data interchange",
+          "Use yaml.safe_load() instead of yaml.load()",
+          "Use dataclasses or pydantic for structured data with validation",
+          "If pickle is required, use hmac signing to verify data integrity"
+        ],
+        "false_positive_signals": [
+          "yaml\\.safe_load",
+          "json\\.loads?\\s*\\(",
+          "Loader=yaml\\.SafeLoader"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "gob\\.NewDecoder\\s*\\(",
+          "gob\\.Decode\\s*\\(",
+          "encoding/gob",
+          "yaml\\.Unmarshal\\s*\\(.*\\bBody"
+        ],
+        "safe_alternatives": [
+          "Use encoding/json for data interchange when possible",
+          "Validate and sanitize deserialized data before use",
+          "Use protobuf or flatbuffers for type-safe binary serialization",
+          "Define strict types and validate after unmarshaling"
+        ],
+        "false_positive_signals": [
+          "json\\.Unmarshal",
+          "json\\.NewDecoder",
+          "validator\\.Validate"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "ObjectInputStream\\s*\\(",
+          "\\.readObject\\s*\\(",
+          "readUnshared\\s*\\(",
+          "XMLDecoder\\s*\\(",
+          "XStream\\s*\\(\\)",
+          "fromXML\\s*\\(",
+          "enableDefaultTyping\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use JSON (Jackson, Gson) instead of Java serialization",
+          "Use a deserialization filter (ObjectInputFilter) in Java 9+",
+          "Use the notsoserial or SerialKiller library as a protection layer",
+          "Configure XStream with a strict allowlist of allowed types"
+        ],
+        "false_positive_signals": [
+          "ObjectInputFilter",
+          "SerialKiller|NotSoSerial",
+          "allowTypes|denyTypes|setClassLoader"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "unserialize\\s*\\(\\s*\\$_",
+          "unserialize\\s*\\(.*\\$",
+          "unserialize\\s*\\(",
+          "wddx_deserialize\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use json_decode() instead of unserialize() for data interchange",
+          "Use unserialize() with allowed_classes option: unserialize($data, ['allowed_classes' => false])",
+          "Validate data integrity with HMAC before deserializing",
+          "Use a structured data format (JSON, XML with safe parser) instead"
+        ],
+        "false_positive_signals": [
+          "allowed_classes.*false",
+          "json_decode\\s*\\(",
+          "allowed_classes.*\\[\\]"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "Marshal\\.load\\s*\\(",
+          "Marshal\\.restore\\s*\\(",
+          "YAML\\.load\\s*\\(",
+          "Oj\\.load\\s*\\(.*mode:\\s*:object",
+          "CSV\\.load\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use JSON.parse() for data interchange",
+          "Use YAML.safe_load() instead of YAML.load()",
+          "Validate and whitelist classes if Marshal is required",
+          "Use Oj with :strict or :safe mode instead of :object mode"
+        ],
+        "false_positive_signals": [
+          "YAML\\.safe_load",
+          "JSON\\.parse",
+          "Oj\\.load\\s*\\(.*mode:\\s*:strict"
+        ]
+      }
+    }
+  },
+  "CWE-798": {
+    "name": "Hardcoded Credentials",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "password\\s*[:=]\\s*['\"][^'\"]{4,}['\"]",
+          "api_?[Kk]ey\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+          "secret\\s*[:=]\\s*['\"][^'\"]{4,}['\"]",
+          "token\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+          "auth\\s*[:=]\\s*['\"][^'\"]{4,}['\"]",
+          "AWS_SECRET_ACCESS_KEY\\s*[:=]\\s*['\"]",
+          "PRIVATE_KEY\\s*[:=]\\s*['\"]"
+        ],
+        "safe_alternatives": [
+          "Use environment variables: process.env.API_KEY",
+          "Use a secrets manager (AWS Secrets Manager, HashiCorp Vault, Doppler)",
+          "Use .env files (with dotenv) and never commit them to version control",
+          "Use configuration services that inject secrets at runtime"
+        ],
+        "false_positive_signals": [
+          "process\\.env\\.",
+          "\\$\\{.*\\}|%s|<.*>|\\{\\{",
+          "example|placeholder|changeme|xxx|test|dummy|TODO"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "password\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "api_?key\\s*=\\s*['\"][^'\"]{8,}['\"]",
+          "secret\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "token\\s*=\\s*['\"][^'\"]{8,}['\"]",
+          "AWS_SECRET_ACCESS_KEY\\s*=\\s*['\"]",
+          "PRIVATE_KEY\\s*=\\s*['\"]"
+        ],
+        "safe_alternatives": [
+          "Use environment variables: os.environ.get('API_KEY')",
+          "Use a secrets manager (AWS Secrets Manager, HashiCorp Vault)",
+          "Use python-dotenv to load secrets from .env files (not committed)",
+          "Use keyring library for OS-level credential storage"
+        ],
+        "false_positive_signals": [
+          "os\\.environ|os\\.getenv",
+          "example|placeholder|changeme|xxx|test|dummy|TODO",
+          "config\\.get|settings\\."
+        ]
+      },
+      "go": {
+        "patterns": [
+          "password\\s*[:=]\\s*\"[^\"]{4,}\"",
+          "apiKey\\s*[:=]\\s*\"[^\"]{8,}\"",
+          "secret\\s*[:=]\\s*\"[^\"]{4,}\"",
+          "token\\s*[:=]\\s*\"[^\"]{8,}\"",
+          "AWS_SECRET_ACCESS_KEY.*\"[A-Za-z0-9/+=]{20,}\""
+        ],
+        "safe_alternatives": [
+          "Use environment variables: os.Getenv('API_KEY')",
+          "Use a secrets manager (AWS Secrets Manager, HashiCorp Vault)",
+          "Use viper or envconfig for configuration management",
+          "Inject secrets via Kubernetes Secrets or cloud provider mechanisms"
+        ],
+        "false_positive_signals": [
+          "os\\.Getenv",
+          "example|placeholder|changeme|xxx|test|dummy|TODO",
+          "viper\\.Get|config\\."
+        ]
+      },
+      "java": {
+        "patterns": [
+          "password\\s*=\\s*\"[^\"]{4,}\"",
+          "apiKey\\s*=\\s*\"[^\"]{8,}\"",
+          "secret\\s*=\\s*\"[^\"]{4,}\"",
+          "token\\s*=\\s*\"[^\"]{8,}\"",
+          "setPassword\\s*\\(\\s*\"[^\"]{4,}\"",
+          "BasicAuth.*\"[^\"]+\"\\s*,\\s*\"[^\"]+\""
+        ],
+        "safe_alternatives": [
+          "Use environment variables: System.getenv('API_KEY')",
+          "Use Spring Vault or AWS Secrets Manager for secrets injection",
+          "Use Java KeyStore for credential storage",
+          "Use externalized configuration (application.yml with env var references)"
+        ],
+        "false_positive_signals": [
+          "System\\.getenv",
+          "example|placeholder|changeme|xxx|test|dummy|TODO",
+          "@Value\\s*\\(.*\\$\\{"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "password\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "api_?key\\s*=\\s*['\"][^'\"]{8,}['\"]",
+          "secret\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "DB_PASSWORD.*['\"][^'\"]{4,}['\"]",
+          "define\\s*\\(\\s*['\"].*(?:KEY|SECRET|PASSWORD|TOKEN)['\"]\\s*,\\s*['\"][^'\"]{4,}['\"]"
+        ],
+        "safe_alternatives": [
+          "Use environment variables: getenv('API_KEY') or $_ENV['API_KEY']",
+          "Use phpdotenv to load secrets from .env files (not committed)",
+          "Use a secrets manager (AWS Secrets Manager, HashiCorp Vault)",
+          "Use Laravel's config system with env() helpers"
+        ],
+        "false_positive_signals": [
+          "getenv\\s*\\(|\\$_ENV",
+          "env\\s*\\(|config\\s*\\(",
+          "example|placeholder|changeme|xxx|test|dummy|TODO"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "password\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "api_?key\\s*=\\s*['\"][^'\"]{8,}['\"]",
+          "secret\\s*=\\s*['\"][^'\"]{4,}['\"]",
+          "token\\s*=\\s*['\"][^'\"]{8,}['\"]",
+          "secret_key_base.*['\"][^'\"]{8,}['\"]"
+        ],
+        "safe_alternatives": [
+          "Use environment variables: ENV['API_KEY']",
+          "Use Rails credentials (rails credentials:edit) for encrypted secrets",
+          "Use dotenv-rails gem for development secrets",
+          "Use a secrets manager (AWS Secrets Manager, HashiCorp Vault)"
+        ],
+        "false_positive_signals": [
+          "ENV\\[|ENV\\.fetch",
+          "example|placeholder|changeme|xxx|test|dummy|TODO",
+          "credentials\\.\\w+|Rails\\.application\\.credentials"
+        ]
+      },
+      "c_cpp": {
+        "patterns": [
+          "password\\s*=\\s*\"[^\"]{4,}\"",
+          "api_?key\\s*=\\s*\"[^\"]{8,}\"",
+          "secret\\s*=\\s*\"[^\"]{4,}\"",
+          "#define\\s+.*(?:PASSWORD|SECRET|KEY|TOKEN)\\s+\"[^\"]{4,}\""
+        ],
+        "safe_alternatives": [
+          "Use environment variables: getenv(\"API_KEY\")",
+          "Load secrets from a configuration file with restricted permissions",
+          "Use a secrets manager or hardware security module (HSM)",
+          "Use OS keychain APIs (libsecret on Linux, Keychain on macOS)"
+        ],
+        "false_positive_signals": [
+          "getenv\\s*\\(",
+          "example|placeholder|changeme|xxx|test|dummy|TODO",
+          "config_read|load_config"
+        ]
+      }
+    }
+  },
+  "CWE-327": {
+    "name": "Use of Broken or Risky Cryptographic Algorithm",
+    "severity": "MEDIUM",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "createHash\\s*\\(\\s*['\"]md5['\"]",
+          "createHash\\s*\\(\\s*['\"]sha1['\"]",
+          "createCipher\\s*\\(\\s*['\"](?:des|rc4|rc2)['\"]",
+          "createCipheriv\\s*\\(\\s*['\"](?:des|rc4|rc2|aes-.*-ecb)['\"]",
+          "CryptoJS\\.MD5\\s*\\(",
+          "CryptoJS\\.SHA1\\s*\\(",
+          "CryptoJS\\.DES\\s*\\(",
+          "crypto\\.createCipher\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use SHA-256 or SHA-3 for hashing: crypto.createHash('sha256')",
+          "Use AES-256-GCM for symmetric encryption: crypto.createCipheriv('aes-256-gcm', ...)",
+          "Use bcrypt or argon2 for password hashing",
+          "Use crypto.createCipheriv() instead of the deprecated crypto.createCipher()"
+        ],
+        "false_positive_signals": [
+          "sha256|sha384|sha512|sha3",
+          "aes-256-gcm|aes-128-gcm|chacha20",
+          "bcrypt|argon2|scrypt"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "hashlib\\.md5\\s*\\(",
+          "hashlib\\.sha1\\s*\\(",
+          "DES\\.new\\s*\\(",
+          "ARC4\\.new\\s*\\(",
+          "Blowfish\\.new\\s*\\(",
+          "from Crypto\\.Cipher import DES",
+          "AES\\.new\\s*\\(.*MODE_ECB",
+          "hashlib\\.new\\s*\\(\\s*['\"]md5['\"]"
+        ],
+        "safe_alternatives": [
+          "Use hashlib.sha256() or hashlib.sha3_256() for hashing",
+          "Use AES in GCM mode: AES.new(key, AES.MODE_GCM)",
+          "Use bcrypt or argon2-cffi for password hashing",
+          "Use cryptography library's Fernet for simple symmetric encryption"
+        ],
+        "false_positive_signals": [
+          "sha256|sha384|sha512|sha3",
+          "MODE_GCM|MODE_CTR|MODE_CBC",
+          "bcrypt|argon2|scrypt|Fernet"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "crypto/md5",
+          "crypto/sha1",
+          "crypto/des",
+          "crypto/rc4",
+          "md5\\.New\\s*\\(",
+          "sha1\\.New\\s*\\(",
+          "md5\\.Sum\\s*\\(",
+          "sha1\\.Sum\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use crypto/sha256 or crypto/sha512 for hashing",
+          "Use crypto/aes with GCM mode for symmetric encryption",
+          "Use golang.org/x/crypto/bcrypt or argon2 for password hashing",
+          "Use golang.org/x/crypto/chacha20poly1305 for authenticated encryption"
+        ],
+        "false_positive_signals": [
+          "crypto/sha256|crypto/sha512",
+          "cipher\\.NewGCM",
+          "bcrypt|argon2|scrypt"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "MessageDigest\\.getInstance\\s*\\(\\s*\"MD5\"",
+          "MessageDigest\\.getInstance\\s*\\(\\s*\"SHA-1\"",
+          "Cipher\\.getInstance\\s*\\(\\s*\"DES",
+          "Cipher\\.getInstance\\s*\\(\\s*\"RC4",
+          "Cipher\\.getInstance\\s*\\(\\s*\"AES/ECB",
+          "Cipher\\.getInstance\\s*\\(\\s*\"AES\"\\s*\\)",
+          "SecretKeySpec\\s*\\(.*\"DES\""
+        ],
+        "safe_alternatives": [
+          "Use MessageDigest.getInstance('SHA-256') or SHA-3",
+          "Use Cipher.getInstance('AES/GCM/NoPadding') for symmetric encryption",
+          "Use BCrypt or Argon2 for password hashing (jBCrypt, Bouncy Castle)",
+          "Use the Tink library for high-level crypto primitives"
+        ],
+        "false_positive_signals": [
+          "SHA-256|SHA-384|SHA-512|SHA3",
+          "AES/GCM|AES/CTR",
+          "BCrypt|Argon2|SCrypt"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "md5\\s*\\(\\s*\\$",
+          "sha1\\s*\\(\\s*\\$",
+          "mcrypt_encrypt\\s*\\(",
+          "MCRYPT_DES|MCRYPT_3DES|MCRYPT_RC4",
+          "openssl_encrypt\\s*\\(.*['\"](?:des|rc4|rc2)['\"]",
+          "crypt\\s*\\(\\s*\\$"
+        ],
+        "safe_alternatives": [
+          "Use hash('sha256', $data) or hash('sha3-256', $data)",
+          "Use openssl_encrypt() with AES-256-GCM",
+          "Use password_hash() with PASSWORD_ARGON2ID for password hashing",
+          "Use sodium_crypto_secretbox() from libsodium for symmetric encryption"
+        ],
+        "false_positive_signals": [
+          "password_hash|password_verify",
+          "sha256|sha384|sha512|sha3",
+          "sodium_crypto|SODIUM_"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "Digest::MD5",
+          "Digest::SHA1",
+          "OpenSSL::Cipher::DES",
+          "OpenSSL::Cipher\\.new\\s*\\(\\s*['\"](?:des|rc4)",
+          "OpenSSL::Cipher\\.new\\s*\\(\\s*['\"]aes-.*-ecb"
+        ],
+        "safe_alternatives": [
+          "Use Digest::SHA256 or Digest::SHA2 for hashing",
+          "Use OpenSSL::Cipher.new('aes-256-gcm') for symmetric encryption",
+          "Use bcrypt-ruby gem for password hashing",
+          "Use RbNaCl (libsodium bindings) for modern crypto primitives"
+        ],
+        "false_positive_signals": [
+          "SHA256|SHA2|SHA512",
+          "aes-256-gcm|aes-128-gcm",
+          "BCrypt|bcrypt|argon2"
+        ]
+      },
+      "c_cpp": {
+        "patterns": [
+          "MD5_Init\\s*\\(|MD5_Update\\s*\\(|MD5_Final\\s*\\(",
+          "SHA1_Init\\s*\\(|SHA1_Update\\s*\\(",
+          "DES_ecb_encrypt\\s*\\(",
+          "EVP_des_|EVP_rc4|EVP_rc2",
+          "EVP_md5\\s*\\(|EVP_sha1\\s*\\(",
+          "DES_set_key\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use EVP_sha256() or EVP_sha3_256() for hashing",
+          "Use EVP_aes_256_gcm() for authenticated symmetric encryption",
+          "Use bcrypt or argon2 for password hashing",
+          "Use libsodium for modern, misuse-resistant crypto"
+        ],
+        "false_positive_signals": [
+          "EVP_sha256|EVP_sha512|EVP_sha3",
+          "EVP_aes_256_gcm|EVP_chacha20_poly1305",
+          "bcrypt|argon2|crypto_secretbox"
+        ]
+      }
+    }
+  },
+  "CWE-611": {
+    "name": "XML External Entity (XXE) Injection",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "xml2js\\.parseString\\s*\\(",
+          "libxmljs\\.parseXml\\s*\\(",
+          "DOMParser\\s*\\(\\)\\.parseFromString",
+          "new DOMParser\\s*\\(",
+          "sax\\.parser\\s*\\(\\s*true"
+        ],
+        "safe_alternatives": [
+          "Disable DTD processing and external entity resolution in parser options",
+          "Use xml2js with {xmldtd: false} and default safe settings",
+          "Prefer JSON over XML for data interchange when possible",
+          "Use fast-xml-parser with entity resolution disabled"
+        ],
+        "false_positive_signals": [
+          "noent.*false|dtd.*false",
+          "disallow.*dtd|disable.*entity",
+          "JSON\\.parse"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "xml\\.etree\\.ElementTree\\.parse\\s*\\(",
+          "xml\\.dom\\.minidom\\.parse\\s*\\(",
+          "xml\\.sax\\.parse\\s*\\(",
+          "lxml\\.etree\\.parse\\s*\\(",
+          "lxml\\.etree\\.fromstring\\s*\\(",
+          "XMLParser\\s*\\(.*resolve_entities\\s*=\\s*True"
+        ],
+        "safe_alternatives": [
+          "Use defusedxml library: defusedxml.ElementTree.parse()",
+          "Use lxml with resolve_entities=False and no_network=True",
+          "Set XMLParser(resolve_entities=False) when using lxml",
+          "Prefer JSON over XML for data interchange"
+        ],
+        "false_positive_signals": [
+          "defusedxml",
+          "resolve_entities\\s*=\\s*False",
+          "forbid_dtd|forbid_entities"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "xml\\.NewDecoder\\s*\\(",
+          "xml\\.Unmarshal\\s*\\(",
+          "encoding/xml"
+        ],
+        "safe_alternatives": [
+          "Go's encoding/xml does not expand external entities by default (generally safe)",
+          "Ensure you are not using a third-party XML parser that enables entity expansion",
+          "Prefer JSON over XML for data interchange",
+          "Validate XML input size and depth to prevent DoS"
+        ],
+        "false_positive_signals": [
+          "json\\.Unmarshal",
+          "json\\.NewDecoder",
+          "encoding/json"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "DocumentBuilderFactory\\.newInstance\\s*\\(",
+          "SAXParserFactory\\.newInstance\\s*\\(",
+          "XMLInputFactory\\.newInstance\\s*\\(",
+          "TransformerFactory\\.newInstance\\s*\\(",
+          "SchemaFactory\\.newInstance\\s*\\(",
+          "XMLReader\\s.*parse\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Disable DTDs: factory.setFeature('http://apache.org/xml/features/disallow-doctype-decl', true)",
+          "Disable external entities: factory.setFeature('http://xml.org/sax/features/external-general-entities', false)",
+          "Use OWASP's XMLInputFactory configuration recommendations",
+          "Prefer JSON (Jackson, Gson) over XML when possible"
+        ],
+        "false_positive_signals": [
+          "disallow-doctype-decl.*true",
+          "external-general-entities.*false",
+          "setExpandEntityReferences.*false"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "simplexml_load_string\\s*\\(",
+          "simplexml_load_file\\s*\\(",
+          "DOMDocument\\s*\\(\\)",
+          "xml_parse\\s*\\(",
+          "loadXML\\s*\\(",
+          "LIBXML_NOENT"
+        ],
+        "safe_alternatives": [
+          "Use libxml_disable_entity_loader(true) for PHP < 8.0",
+          "Avoid LIBXML_NOENT flag which enables entity substitution",
+          "Use LIBXML_DTDLOAD | LIBXML_DTDATTR flags carefully",
+          "Prefer JSON over XML for data interchange"
+        ],
+        "false_positive_signals": [
+          "libxml_disable_entity_loader\\s*\\(\\s*true",
+          "LIBXML_NONET",
+          "json_decode"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "Nokogiri::XML\\s*\\(",
+          "REXML::Document\\.new\\s*\\(",
+          "LibXML::XML::Parser",
+          "Nokogiri.*parse\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use Nokogiri with nonet option: Nokogiri::XML(data) { |config| config.nonet }",
+          "Use Nokogiri with noblanks and nonet options",
+          "Disable DTD loading in the parser configuration",
+          "Prefer JSON over XML for data interchange"
+        ],
+        "false_positive_signals": [
+          "config\\.nonet",
+          "config\\.nodtd",
+          "JSON\\.parse"
+        ]
+      }
+    }
+  },
+  "CWE-918": {
+    "name": "Server-Side Request Forgery (SSRF)",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "fetch\\s*\\(\\s*req\\.",
+          "fetch\\s*\\(\\s*(?:body|params|query)\\.",
+          "axios\\.get\\s*\\(\\s*req\\.",
+          "axios\\s*\\(\\s*\\{.*url:\\s*req\\.",
+          "http\\.get\\s*\\(\\s*req\\.",
+          "request\\s*\\(\\s*req\\.",
+          "got\\s*\\(\\s*req\\."
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Block requests to private/internal IP ranges (127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)",
+          "Use a URL parser to verify scheme (only http/https) and host before making requests",
+          "Use an HTTP proxy that restricts outbound destinations"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowedDomains",
+          "isPrivateIP|isInternalIP|validateUrl",
+          "new URL\\(.*\\.hostname"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "requests\\.get\\s*\\(.*request\\.",
+          "requests\\.post\\s*\\(.*request\\.",
+          "urllib\\.request\\.urlopen\\s*\\(.*request\\.",
+          "httpx\\.get\\s*\\(.*request\\.",
+          "aiohttp.*\\.get\\s*\\(.*request\\.",
+          "urlopen\\s*\\(.*request\\."
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Use ipaddress module to verify the resolved IP is not private/internal",
+          "Parse the URL and validate scheme and host before making requests",
+          "Use ssrf-proxy or a similar library that blocks internal network requests"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowed_domains",
+          "ipaddress\\.ip_address.*is_private",
+          "urlparse.*\\.hostname|validate_url"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "http\\.Get\\s*\\(.*r\\.(?:URL|Form)",
+          "http\\.Post\\s*\\(.*r\\.(?:URL|Form)",
+          "http\\.NewRequest\\s*\\(.*r\\.(?:URL|Form)",
+          "client\\.Do\\s*\\(.*r\\.(?:URL|Form)",
+          "client\\.Get\\s*\\(.*r\\.(?:URL|Form)"
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Resolve the URL's IP and verify it is not in a private range",
+          "Use net.LookupHost() and check the IP before making the request",
+          "Configure the HTTP client's Transport to block private IPs via a custom DialContext"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowedHosts",
+          "IsPrivate|isPrivateIP",
+          "net\\.LookupHost|validateURL"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "new URL\\s*\\(.*getParameter",
+          "HttpURLConnection.*getParameter",
+          "HttpClient.*getParameter",
+          "RestTemplate.*getParameter",
+          "WebClient.*getParameter",
+          "openConnection\\s*\\(\\).*getParameter"
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Resolve the URL's IP with InetAddress and verify it is not private",
+          "Use a URL parser to validate scheme and host before requests",
+          "Configure HTTP client to use a proxy that restricts outbound destinations"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowedDomains",
+          "InetAddress.*isSiteLocalAddress|isLoopbackAddress",
+          "validateUrl|validateURL|urlValidator"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "file_get_contents\\s*\\(\\s*\\$_",
+          "curl_setopt.*CURLOPT_URL.*\\$_",
+          "fopen\\s*\\(\\s*['\"]http.*\\$_",
+          "curl_exec.*\\$_(?:GET|POST|REQUEST)"
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Parse the URL and verify the host is not an internal/private IP",
+          "Disable curl redirects or validate redirect destinations",
+          "Use CURLOPT_PROTOCOLS to restrict to CURLPROTO_HTTPS"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowed_domains",
+          "filter_var.*FILTER_VALIDATE_URL",
+          "gethostbyname.*is_private|validateUrl"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "URI\\.open\\s*\\(.*params",
+          "Net::HTTP\\.get\\s*\\(.*params",
+          "HTTParty\\.get\\s*\\(.*params",
+          "Faraday\\.get\\s*\\(.*params",
+          "open-uri.*open\\s*\\(.*params",
+          "RestClient\\.get\\s*\\(.*params"
+        ],
+        "safe_alternatives": [
+          "Validate URLs against an allowlist of permitted domains",
+          "Use Resolv.getaddress() and verify the IP is not private",
+          "Parse the URL with URI.parse() and validate scheme and host",
+          "Use the ssrf_filter gem to block requests to internal networks"
+        ],
+        "false_positive_signals": [
+          "allowlist|whitelist|allowed_domains",
+          "ssrf_filter|SsrfFilter",
+          "Resolv\\.getaddress|validate_url"
+        ]
+      }
+    }
+  },
+  "CWE-200": {
+    "name": "Exposure of Sensitive Information",
+    "severity": "MEDIUM",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "console\\.log\\s*\\(.*(?:password|token|secret|key|credential)",
+          "res\\.(?:json|send)\\s*\\(.*err(?:or)?\\.",
+          "res\\.(?:json|send)\\s*\\(.*stack",
+          "console\\.(?:log|error|warn)\\s*\\(.*err(?:or)?\\.stack",
+          "showStack.*true"
+        ],
+        "safe_alternatives": [
+          "Use a structured logger (winston, pino) with log level filtering in production",
+          "Return generic error messages to clients; log details server-side only",
+          "Sanitize error responses to remove stack traces and internal details",
+          "Use error-handling middleware that masks sensitive information"
+        ],
+        "false_positive_signals": [
+          "production.*false|development|debug",
+          "sanitize|redact|mask",
+          "NODE_ENV.*production"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "print\\s*\\(.*(?:password|token|secret|key|credential)",
+          "traceback\\.print_exc\\s*\\(",
+          "logging\\.debug\\s*\\(.*(?:password|token|secret)",
+          "DEBUG\\s*=\\s*True",
+          "app\\.debug\\s*=\\s*True",
+          "return.*traceback\\.format_exc"
+        ],
+        "safe_alternatives": [
+          "Use the logging module with appropriate log levels (WARNING+ in production)",
+          "Set DEBUG=False in production Django/Flask settings",
+          "Return generic error messages; log full tracebacks server-side only",
+          "Use Sentry or similar for error tracking without exposing details to users"
+        ],
+        "false_positive_signals": [
+          "DEBUG\\s*=\\s*False",
+          "app\\.debug\\s*=\\s*False",
+          "logging\\.warning|logging\\.error"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "fmt\\.Fprintf\\s*\\(w.*err\\b",
+          "http\\.Error\\s*\\(.*err\\.Error",
+          "json\\.NewEncoder\\(w\\)\\.Encode\\s*\\(.*err",
+          "log\\.Print.*(?:password|token|secret|key)",
+          "fmt\\.Println.*(?:password|token|secret)"
+        ],
+        "safe_alternatives": [
+          "Return generic error messages to clients via http.Error(w, 'Internal error', 500)",
+          "Log detailed errors server-side with structured logging (zap, zerolog)",
+          "Wrap errors with context but don't expose internal details to the client",
+          "Use error types to categorize errors and control what is exposed"
+        ],
+        "false_positive_signals": [
+          "http\\.Error\\s*\\(.*\"Internal",
+          "log\\..*\\bserver\\b|log\\..*\\binternal\\b",
+          "zap\\.|zerolog\\.|logrus\\."
+        ]
+      },
+      "java": {
+        "patterns": [
+          "e\\.printStackTrace\\s*\\(",
+          "response\\.getWriter\\(\\)\\.(?:print|write).*exception",
+          "System\\.out\\.println.*(?:password|token|secret)",
+          "@ExceptionHandler.*return.*e\\.getMessage",
+          "throw new.*\\(.*e\\.getMessage\\(\\).*getParameter"
+        ],
+        "safe_alternatives": [
+          "Use a logging framework (SLF4J, Log4j2) with proper log levels",
+          "Configure error handlers to return generic messages in production",
+          "Use @ControllerAdvice for centralized, safe error handling in Spring",
+          "Log exceptions server-side and return sanitized error responses"
+        ],
+        "false_positive_signals": [
+          "logger\\.error|log\\.error",
+          "ResponseEntity.*HttpStatus\\.INTERNAL_SERVER_ERROR",
+          "@ControllerAdvice"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "var_dump\\s*\\(",
+          "print_r\\s*\\(.*\\$_",
+          "display_errors.*On",
+          "error_reporting\\s*\\(\\s*E_ALL",
+          "echo.*\\$e->getMessage",
+          "echo.*\\$e->getTraceAsString"
+        ],
+        "safe_alternatives": [
+          "Set display_errors=Off in production php.ini",
+          "Use error_log() for server-side logging instead of displaying errors",
+          "Return generic error messages to users",
+          "Use a logging library (Monolog) with appropriate log levels"
+        ],
+        "false_positive_signals": [
+          "display_errors.*Off",
+          "error_log\\s*\\(",
+          "ini_set.*display_errors.*0"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "puts\\s+.*(?:password|token|secret|key)",
+          "render.*text:.*exception",
+          "render.*json:.*error.*message",
+          "Rails\\.logger\\.debug.*(?:password|token|secret)",
+          "raise.*params\\[|raise.*request\\."
+        ],
+        "safe_alternatives": [
+          "Use Rails.logger with appropriate log levels (info/warn/error in production)",
+          "Configure config.consider_all_requests_local = false in production",
+          "Use rescue_from in ApplicationController for centralized error handling",
+          "Filter sensitive parameters in config/initializers/filter_parameter_logging.rb"
+        ],
+        "false_positive_signals": [
+          "config\\.consider_all_requests_local\\s*=\\s*false",
+          "filter_parameters",
+          "rescue_from.*render.*status:\\s*500"
+        ]
+      }
+    }
+  },
+  "CWE-352": {
+    "name": "Cross-Site Request Forgery (CSRF)",
+    "severity": "MEDIUM",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "app\\.post\\s*\\(",
+          "cors\\s*\\(\\s*\\{\\s*origin:\\s*['\"]\\*['\"]",
+          "cors\\s*\\(\\s*\\)",
+          "Access-Control-Allow-Origin.*\\*",
+          "csrf.*disabled|csrf.*false"
+        ],
+        "safe_alternatives": [
+          "Use the csurf middleware for Express applications",
+          "Use SameSite=Strict or SameSite=Lax cookie attribute",
+          "Verify the Origin/Referer header on state-changing requests",
+          "Use anti-CSRF tokens in forms and verify on the server"
+        ],
+        "false_positive_signals": [
+          "csurf|csrf\\s*\\(|csrfProtection",
+          "SameSite\\s*=\\s*(?:Strict|Lax)",
+          "x-csrf-token|_csrf"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "@csrf_exempt",
+          "csrf_protect.*False",
+          "WTF_CSRF_ENABLED.*False",
+          "CSRFProtect.*disabled",
+          "CSRF_ENABLED.*False"
+        ],
+        "safe_alternatives": [
+          "Use Django's built-in CSRF middleware (enabled by default)",
+          "Use Flask-WTF's CSRFProtect extension",
+          "Include {% csrf_token %} in Django templates",
+          "Set SameSite attribute on session cookies"
+        ],
+        "false_positive_signals": [
+          "csrf_token",
+          "CSRFProtect\\s*\\(",
+          "CsrfViewMiddleware"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "csrf\\(\\)\\.disable\\(",
+          "csrf\\.disable\\(",
+          "\\.csrf\\s*\\(\\s*AbstractHttpConfigurer::disable",
+          "CsrfConfigurer.*disable"
+        ],
+        "safe_alternatives": [
+          "Keep Spring Security CSRF protection enabled (default)",
+          "Use CsrfTokenRepository with HttpSessionCsrfTokenRepository or CookieCsrfTokenRepository",
+          "Include CSRF tokens in forms with <input type='hidden' name='_csrf'>",
+          "Set SameSite attribute on session cookies"
+        ],
+        "false_positive_signals": [
+          "CsrfTokenRepository",
+          "csrfTokenRepository\\s*\\(",
+          "_csrf|CsrfToken"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "VerifyCsrfToken.*\\$except",
+          "csrf_field.*disabled",
+          "WITHOUT_MIDDLEWARE.*VerifyCsrfToken",
+          "withoutMiddleware.*csrf"
+        ],
+        "safe_alternatives": [
+          "Use Laravel's built-in CSRF middleware (enabled by default)",
+          "Include @csrf in Blade forms",
+          "Use csrf_token() or csrf_field() in form templates",
+          "Set SameSite attribute on session cookies"
+        ],
+        "false_positive_signals": [
+          "@csrf|csrf_field|csrf_token",
+          "VerifyCsrfToken",
+          "SameSite.*Strict|SameSite.*Lax"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "skip_before_action\\s*:verify_authenticity_token",
+          "protect_from_forgery.*except",
+          "protect_from_forgery.*with:\\s*:null_session",
+          "skip_forgery_protection"
+        ],
+        "safe_alternatives": [
+          "Use Rails' built-in protect_from_forgery (enabled by default)",
+          "Include form_authenticity_token in forms or use form_for/form_with helpers",
+          "Use protect_from_forgery with: :exception for strict enforcement",
+          "Set SameSite attribute on session cookies in config"
+        ],
+        "false_positive_signals": [
+          "protect_from_forgery",
+          "authenticity_token",
+          "csrf_meta_tags"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "csrf\\..*Disabled|csrf\\..*false",
+          "nosurf\\..*exempt",
+          "gorilla/csrf.*Exempt"
+        ],
+        "safe_alternatives": [
+          "Use gorilla/csrf or nosurf middleware for CSRF protection",
+          "Verify Origin/Referer headers on state-changing requests",
+          "Use SameSite cookie attribute for session cookies",
+          "Include anti-CSRF tokens in forms and validate server-side"
+        ],
+        "false_positive_signals": [
+          "csrf\\.Protect|nosurf\\.New",
+          "csrf\\.Token|csrf\\.TemplateField",
+          "SameSite.*Strict|SameSite.*Lax"
+        ]
+      }
+    }
+  },
+  "CWE-434": {
+    "name": "Unrestricted Upload of File with Dangerous Type",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "multer\\s*\\(\\s*\\{",
+          "\\.upload\\s*\\(.*req\\.file",
+          "formidable\\s*\\(",
+          "busboy\\s*\\(",
+          "req\\.files?\\.",
+          "writeFile.*req\\.(?:file|body)"
+        ],
+        "safe_alternatives": [
+          "Validate file MIME type on the server (not just the extension)",
+          "Use multer's fileFilter to restrict accepted file types",
+          "Store uploaded files outside the web root or in cloud storage (S3)",
+          "Rename uploaded files to random names; never use the original filename in paths"
+        ],
+        "false_positive_signals": [
+          "fileFilter|mimetype|allowedTypes",
+          "\\.(?:endsWith|match)\\s*\\(.*\\.(jpg|png|pdf)",
+          "limits.*fileSize|maxFileSize"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "request\\.files\\[",
+          "file\\.save\\s*\\(",
+          "upload_to\\s*=",
+          "FileField\\s*\\(",
+          "UploadedFile",
+          "save\\s*\\(.*request\\.FILES"
+        ],
+        "safe_alternatives": [
+          "Validate file content type using python-magic (not just the extension)",
+          "Use Django's FileExtensionValidator or custom validators",
+          "Store files outside the web root or use cloud storage",
+          "Use werkzeug.utils.secure_filename() and rename files to random names"
+        ],
+        "false_positive_signals": [
+          "secure_filename",
+          "FileExtensionValidator|content_type",
+          "ALLOWED_EXTENSIONS|allowed_file"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "r\\.FormFile\\s*\\(",
+          "multipart\\.FileHeader",
+          "io\\.Copy\\s*\\(.*FormFile",
+          "os\\.Create\\s*\\(.*FormFile"
+        ],
+        "safe_alternatives": [
+          "Validate file content type using http.DetectContentType()",
+          "Restrict accepted MIME types with an allowlist",
+          "Store files outside the web root or in cloud storage",
+          "Rename files to random UUIDs; never use the original filename"
+        ],
+        "false_positive_signals": [
+          "DetectContentType",
+          "allowedTypes|validMimeType",
+          "filepath\\.Ext.*switch|mime\\.TypeByExtension"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "MultipartFile",
+          "getInputStream.*Part\\b",
+          "transferTo\\s*\\(",
+          "CommonsMultipartFile",
+          "@RequestParam.*MultipartFile"
+        ],
+        "safe_alternatives": [
+          "Validate file content type using Apache Tika or a similar library",
+          "Restrict accepted MIME types with an allowlist",
+          "Store files outside the web root or in cloud storage (S3)",
+          "Use Spring's @Valid with custom validators for file uploads"
+        ],
+        "false_positive_signals": [
+          "getContentType.*equals|contentType.*allowed",
+          "Tika|MimeType.*detect",
+          "maxFileSize|fileSizeThreshold"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "move_uploaded_file\\s*\\(",
+          "\\$_FILES\\s*\\[",
+          "tmp_name",
+          "getClientOriginalExtension\\s*\\(",
+          "storeAs\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Validate file MIME type using finfo_file() (not just the extension)",
+          "Use an allowlist of acceptable MIME types and extensions",
+          "Store files outside the web root or in cloud storage",
+          "Rename files to random names; never trust getClientOriginalName()"
+        ],
+        "false_positive_signals": [
+          "finfo_file|mime_content_type",
+          "allowed_extensions|in_array.*mime",
+          "getClientMimeType.*\\bin\\b"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "params\\[.*\\]\\.read",
+          "params\\[.*\\]\\.original_filename",
+          "uploaded_file",
+          "CarrierWave|Paperclip|ActiveStorage",
+          "File\\.open.*params.*write"
+        ],
+        "safe_alternatives": [
+          "Validate file content type using MimeMagic or Marcel gems",
+          "Use ActiveStorage's built-in content type validation",
+          "Use CarrierWave's content_type_allowlist or Paperclip's validates_attachment_content_type",
+          "Store files outside the web root or use cloud storage"
+        ],
+        "false_positive_signals": [
+          "content_type_allowlist|validates_attachment_content_type",
+          "MimeMagic|Marcel",
+          "validate.*content_type"
+        ]
+      }
+    }
+  },
+  "CWE-862": {
+    "name": "Missing Authorization",
+    "severity": "MEDIUM",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "app\\.(?:put|post|delete|patch)\\s*\\(\\s*['\"]",
+          "router\\.(?:put|post|delete|patch)\\s*\\(\\s*['\"]",
+          "\\bexports\\.(?:update|delete|create)\\b.*req\\s*,\\s*res",
+          "adminOnly.*false|authorization.*disabled"
+        ],
+        "safe_alternatives": [
+          "Use authentication middleware (passport, express-jwt) on all protected routes",
+          "Implement role-based access control (RBAC) middleware",
+          "Verify resource ownership before allowing modifications",
+          "Use a policy/permission framework (casl, accesscontrol) for fine-grained authorization"
+        ],
+        "false_positive_signals": [
+          "authenticate|isAuthenticated|requireAuth",
+          "authorize|checkPermission|hasRole",
+          "middleware.*auth|guard"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "@app\\.route.*methods=\\[.*(?:POST|PUT|DELETE|PATCH)",
+          "def\\s+(?:update|delete|create).*request",
+          "permission_classes\\s*=\\s*\\[\\s*\\]",
+          "permission_classes.*AllowAny",
+          "@permission_classes\\s*\\(\\s*\\[\\s*\\]\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Use Django's @login_required and @permission_required decorators",
+          "Use Django REST framework's permission_classes (IsAuthenticated, etc.)",
+          "Use Flask-Login's @login_required decorator",
+          "Implement object-level permissions with django-guardian or similar"
+        ],
+        "false_positive_signals": [
+          "login_required|permission_required",
+          "IsAuthenticated|IsAdminUser",
+          "@permissions|has_permission"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "HandleFunc\\s*\\(\\s*\".*(?:update|delete|create|admin)",
+          "Handle\\s*\\(\\s*\".*(?:update|delete|create|admin)",
+          "http\\.(?:Post|Put|Delete).*Handler"
+        ],
+        "safe_alternatives": [
+          "Use middleware to verify authentication tokens on protected routes",
+          "Implement role-based access control middleware",
+          "Verify resource ownership in handler before modifications",
+          "Use a framework like casbin for policy-based authorization"
+        ],
+        "false_positive_signals": [
+          "authMiddleware|requireAuth|isAuthenticated",
+          "checkPermission|authorize|hasRole",
+          "middleware\\.Auth|WithAuth"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "@RequestMapping.*method.*(?:POST|PUT|DELETE|PATCH)",
+          "permitAll\\s*\\(\\)",
+          "\\.antMatchers.*permitAll",
+          "\\.authorizeRequests\\(\\)\\.anyRequest\\(\\)\\.permitAll"
+        ],
+        "safe_alternatives": [
+          "Use Spring Security @PreAuthorize or @Secured on controller methods",
+          "Configure HttpSecurity with proper authorization rules",
+          "Use method-level security with @RolesAllowed",
+          "Implement resource ownership checks in service layer"
+        ],
+        "false_positive_signals": [
+          "@PreAuthorize|@Secured|@RolesAllowed",
+          "authenticated\\(\\)|hasRole|hasAuthority",
+          "SecurityContext.*getAuthentication"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "Route::(?:post|put|delete|patch)\\s*\\(",
+          "public function\\s+(?:update|delete|store|destroy)\\s*\\(",
+          "withoutMiddleware.*auth",
+          "Gate::define.*return true"
+        ],
+        "safe_alternatives": [
+          "Use Laravel middleware('auth') on protected routes",
+          "Use Laravel policies and Gate facade for authorization checks",
+          "Use $this->authorize() in controllers for policy enforcement",
+          "Implement resource ownership verification in service/repository layer"
+        ],
+        "false_positive_signals": [
+          "middleware.*auth|->can\\(",
+          "authorize\\s*\\(|Gate::allows",
+          "@can|policy"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "def\\s+(?:update|destroy|create)\\b",
+          "skip_before_action\\s*:authenticate",
+          "before_action.*except:.*(?:update|destroy|create)"
+        ],
+        "safe_alternatives": [
+          "Use before_action :authenticate_user! on protected controllers",
+          "Use Pundit or CanCanCan for authorization policy enforcement",
+          "Verify resource ownership: @post = current_user.posts.find(params[:id])",
+          "Use Devise's authenticate_user! for authentication checks"
+        ],
+        "false_positive_signals": [
+          "authenticate_user!|before_action.*:auth",
+          "authorize\\s|Pundit|CanCanCan",
+          "current_user\\..*find"
+        ]
+      }
+    }
+  },
+  "CWE-287": {
+    "name": "Improper Authentication",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "jwt\\.verify.*algorithms.*none",
+          "jwt\\.decode\\s*\\(",
+          "jsonwebtoken.*ignoreExpiration.*true",
+          "bcrypt\\.compare.*==\\s*true",
+          "password\\s*===?\\s*req\\.",
+          "if\\s*\\(\\s*req\\.headers\\.authorization\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Use jwt.verify() with a strong secret and explicit algorithm (HS256, RS256)",
+          "Use bcrypt.compare() or argon2.verify() for password verification",
+          "Implement proper session management with secure cookie settings",
+          "Use established auth libraries (passport.js, next-auth)"
+        ],
+        "false_positive_signals": [
+          "jwt\\.verify\\s*\\(.*secret",
+          "bcrypt\\.compare\\s*\\(",
+          "passport\\.authenticate"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "jwt\\.decode\\s*\\(.*(?:verify|algorithms).*(?:False|none)",
+          "jwt\\.decode\\s*\\(.*options.*verify.*False",
+          "check_password.*==",
+          "hashlib.*==.*password",
+          "authenticate.*password\\s*==\\s*"
+        ],
+        "safe_alternatives": [
+          "Use PyJWT with algorithms=['HS256'] and verify=True (default)",
+          "Use Django's authenticate() and check_password() functions",
+          "Use bcrypt or argon2-cffi for password verification",
+          "Use Django REST framework's authentication classes"
+        ],
+        "false_positive_signals": [
+          "jwt\\.decode\\s*\\(.*algorithms=\\[",
+          "check_password\\s*\\(",
+          "authenticate\\s*\\(.*password="
+        ]
+      },
+      "go": {
+        "patterns": [
+          "jwt\\.Parse.*func.*token.*error.*return true",
+          "jwt\\.ParseUnverified",
+          "password.*==.*r\\.Form",
+          "subtle\\.ConstantTimeCompare.*==\\s*0"
+        ],
+        "safe_alternatives": [
+          "Use jwt-go or golang-jwt with explicit signing method validation",
+          "Use bcrypt.CompareHashAndPassword() for password verification",
+          "Use crypto/subtle.ConstantTimeCompare for timing-safe comparisons",
+          "Implement proper session management with gorilla/sessions"
+        ],
+        "false_positive_signals": [
+          "jwt\\.Parse\\s*\\(.*SigningMethod",
+          "bcrypt\\.CompareHashAndPassword",
+          "subtle\\.ConstantTimeCompare.*==\\s*1"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "password\\.equals\\s*\\(",
+          "\\.setSigningKey\\s*\\(\\s*\"\"",
+          "NullAuthenticator",
+          "allowAllHostnameVerifier|ALLOW_ALL_HOSTNAME_VERIFIER",
+          "TrustAllCerts|X509TrustManager.*return"
+        ],
+        "safe_alternatives": [
+          "Use BCrypt.checkpw() or Argon2 for password verification",
+          "Use Spring Security's AuthenticationManager with proper configuration",
+          "Use JJWT or Nimbus JOSE with explicit algorithm and key validation",
+          "Use MessageDigest.isEqual() for timing-safe comparisons"
+        ],
+        "false_positive_signals": [
+          "BCrypt\\.checkpw|passwordEncoder\\.matches",
+          "AuthenticationManager|AuthenticationProvider",
+          "MessageDigest\\.isEqual"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "password.*==\\s*\\$_",
+          "md5\\s*\\(.*\\$_.*==",
+          "strcmp\\s*\\(.*password",
+          "\\$_(?:POST|GET).*===?\\s*\\$.*password"
+        ],
+        "safe_alternatives": [
+          "Use password_verify() with password_hash() for password checking",
+          "Use Laravel's Auth::attempt() or built-in authentication",
+          "Use hash_equals() for timing-safe string comparisons",
+          "Use established auth libraries (Laravel Sanctum, Passport)"
+        ],
+        "false_positive_signals": [
+          "password_verify\\s*\\(",
+          "Auth::attempt|Auth::check",
+          "hash_equals\\s*\\("
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "password\\s*==\\s*params",
+          "Digest::.*==.*password",
+          "has_secure_password.*false",
+          "authenticate.*==\\s*false"
+        ],
+        "safe_alternatives": [
+          "Use has_secure_password with bcrypt-ruby for password authentication",
+          "Use Devise gem for comprehensive authentication",
+          "Use ActiveSupport::SecurityUtils.secure_compare for timing-safe comparison",
+          "Use Warden or other Rack-based authentication middleware"
+        ],
+        "false_positive_signals": [
+          "has_secure_password",
+          "Devise|devise",
+          "secure_compare|authenticate\\s*\\("
+        ]
+      }
+    }
+  },
+  "CWE-306": {
+    "name": "Missing Authentication for Critical Function",
+    "severity": "HIGH",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "app\\.(?:post|put|delete)\\s*\\(\\s*['\"].*(?:admin|config|setting|user|account).*(?:req\\s*,\\s*res)",
+          "router\\.(?:post|put|delete)\\s*\\(\\s*['\"].*(?:admin|config|setting).*(?:req\\s*,\\s*res)",
+          "exports\\.(?:deleteUser|updateConfig|resetPassword)\\s*=",
+          "app\\.(?:post|put|delete)"
+        ],
+        "safe_alternatives": [
+          "Add authentication middleware to all critical routes",
+          "Use route-level guards that verify session/token before handler runs",
+          "Group critical routes under an authenticated router with middleware",
+          "Use role-based middleware for admin-only endpoints"
+        ],
+        "false_positive_signals": [
+          "isAuthenticated|requireAuth|authenticate",
+          "middleware.*auth|passport\\.",
+          "verifyToken|checkSession"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "def\\s+(?:delete_user|admin_panel|reset_password|update_config|change_role)\\s*\\(",
+          "@app\\.route.*(?:admin|config|setting|user/delete)",
+          "authentication_classes\\s*=\\s*\\[\\s*\\]",
+          "authentication_classes.*\\(\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Use @login_required for Flask or Django views",
+          "Use DRF authentication_classes with proper authenticators",
+          "Add authentication checks at the beginning of critical functions",
+          "Use middleware to enforce authentication globally with explicit exemptions"
+        ],
+        "false_positive_signals": [
+          "@login_required|IsAuthenticated",
+          "authentication_classes.*\\[.*Authentication",
+          "request\\.user\\.is_authenticated"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "HandleFunc\\s*\\(\\s*\"/(?:admin|config|setting|api/delete)\"",
+          "Handle\\s*\\(\\s*\"/(?:admin|config|setting)\"",
+          "http\\.HandleFunc.*(?:admin|config|delete).*func\\(w"
+        ],
+        "safe_alternatives": [
+          "Wrap handlers with authentication middleware",
+          "Use a router that supports middleware groups (chi, gorilla/mux)",
+          "Verify authentication tokens in a middleware before routing",
+          "Use context-based authentication propagation"
+        ],
+        "false_positive_signals": [
+          "authMiddleware|requireAuth",
+          "middleware\\.Auth|WithAuth",
+          "GetUserFromContext|ctx\\.Value.*user"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "@RequestMapping.*(?:admin|config|setting|delete)",
+          "http\\..*(?:antMatchers|requestMatchers).*(?:admin|config).*permitAll",
+          "@GetMapping.*admin"
+        ],
+        "safe_alternatives": [
+          "Use @PreAuthorize or @Secured annotations on critical endpoints",
+          "Configure HttpSecurity to require authentication for admin paths",
+          "Use Spring Security's method-level security for critical operations",
+          "Implement proper SecurityFilterChain with authenticated() for protected paths"
+        ],
+        "false_positive_signals": [
+          "@PreAuthorize|@Secured",
+          "authenticated\\(\\)|hasRole\\(\"ADMIN\"\\)",
+          "SecurityContext"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "Route::(?:post|put|delete).*(?:admin|config|setting|user.delete)",
+          "public function\\s+(?:adminAction|deleteUser|resetPassword|updateConfig)",
+          "Route::group\\s*\\("
+        ],
+        "safe_alternatives": [
+          "Use Route::middleware('auth') for all critical routes",
+          "Group admin routes with auth and admin middleware",
+          "Use Laravel Gates and Policies for critical operations",
+          "Implement middleware that checks authentication before controllers"
+        ],
+        "false_positive_signals": [
+          "middleware.*auth",
+          "Gate::authorize|\\$this->authorize",
+          "Auth::check|auth\\(\\)->check"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "def\\s+(?:destroy|admin_panel|reset_password|update_settings)",
+          "namespace.*admin.*do",
+          "resources.*:users.*only:.*:destroy"
+        ],
+        "safe_alternatives": [
+          "Use before_action :authenticate_user! for critical controllers",
+          "Use Devise's authenticate_user! for admin namespaces",
+          "Group critical routes under authenticated scope",
+          "Use Pundit or CanCanCan for action-level authorization"
+        ],
+        "false_positive_signals": [
+          "before_action.*authenticate",
+          "Devise|devise",
+          "authenticate_user!"
+        ]
+      }
+    }
+  },
+  "CWE-732": {
+    "name": "Incorrect Permission Assignment for Critical Resource",
+    "severity": "MEDIUM",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "chmod.*0?777",
+          "mode:\\s*0?777",
+          "writeFile.*mode:\\s*0?666",
+          "fs\\.chmod.*0?777",
+          "umask\\s*\\(\\s*0\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Use restrictive file permissions: 0644 for files, 0755 for directories",
+          "Use 0600 for sensitive files (credentials, keys)",
+          "Set umask to 0077 to restrict default permissions",
+          "Use os-level access controls (ACLs) for fine-grained permissions"
+        ],
+        "false_positive_signals": [
+          "mode:\\s*0?(?:600|644|640|700|750|755)",
+          "umask\\s*\\(\\s*0o?77\\s*\\)",
+          "chmod.*0?(?:600|644|640|700)"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "os\\.chmod\\s*\\(.*0o?777",
+          "os\\.chmod\\s*\\(.*0o?666",
+          "os\\.umask\\s*\\(\\s*0\\s*\\)",
+          "open\\s*\\(.*mode.*w.*\\).*os\\.chmod.*777",
+          "stat\\.S_IRWXO|S_IWOTH|S_IXOTH"
+        ],
+        "safe_alternatives": [
+          "Use os.chmod() with 0o600 for sensitive files, 0o644 for regular files",
+          "Use os.umask(0o077) to restrict default permissions",
+          "Use tempfile module for temporary files (creates with restrictive permissions)",
+          "Use pathlib.Path.chmod() with restrictive modes"
+        ],
+        "false_positive_signals": [
+          "os\\.chmod\\s*\\(.*0o?(?:600|644|640|700)",
+          "umask\\s*\\(\\s*0o?77\\s*\\)",
+          "stat\\.S_IRUSR|S_IWUSR"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "os\\.Chmod\\s*\\(.*0777",
+          "os\\.WriteFile\\s*\\(.*0777",
+          "os\\.Mkdir\\s*\\(.*0777",
+          "os\\.MkdirAll\\s*\\(.*0777",
+          "os\\.OpenFile\\s*\\(.*0666"
+        ],
+        "safe_alternatives": [
+          "Use 0600 for sensitive files, 0644 for regular files, 0755 for directories",
+          "Use os.WriteFile() with appropriate permission mode",
+          "Use os.MkdirAll() with 0750 or 0700 for directories",
+          "Review and restrict umask in the application startup"
+        ],
+        "false_positive_signals": [
+          "os\\.(?:WriteFile|Chmod)\\s*\\(.*0(?:600|644|640|700)",
+          "os\\.Mkdir.*0(?:700|750|755)",
+          "Chmod.*FileMode\\(0600\\)"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "setReadable\\s*\\(\\s*true\\s*,\\s*false",
+          "setWritable\\s*\\(\\s*true\\s*,\\s*false",
+          "setExecutable\\s*\\(\\s*true\\s*,\\s*false",
+          "PosixFilePermission.*OTHERS_WRITE",
+          "PosixFilePermission.*OTHERS_EXECUTE"
+        ],
+        "safe_alternatives": [
+          "Use Files.setPosixFilePermissions() with restrictive PosixFilePermission sets",
+          "Use setReadable(true, true) to limit access to owner only",
+          "Create files with restrictive permissions using PosixFilePermissions.asFileAttribute()",
+          "Use Java NIO2 ACL APIs for fine-grained access control"
+        ],
+        "false_positive_signals": [
+          "setReadable\\s*\\(\\s*true\\s*,\\s*true",
+          "OWNER_READ|OWNER_WRITE",
+          "PosixFilePermissions.*600|PosixFilePermissions.*640"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "chmod\\s*\\(.*0?777",
+          "chmod\\s*\\(.*0?666",
+          "umask\\s*\\(\\s*0\\s*\\)",
+          "mkdir\\s*\\(.*0?777"
+        ],
+        "safe_alternatives": [
+          "Use chmod() with 0644 for files and 0755 for directories",
+          "Use 0600 for sensitive files (config, credentials)",
+          "Set umask to restrict default permissions",
+          "Use file_put_contents() with appropriate file permissions"
+        ],
+        "false_positive_signals": [
+          "chmod\\s*\\(.*0?(?:600|644|640|700|755)",
+          "umask\\s*\\(\\s*0?77\\s*\\)",
+          "mkdir\\s*\\(.*0?(?:700|750|755)"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "File\\.chmod\\s*\\(\\s*0?777",
+          "FileUtils\\.chmod\\s*\\(\\s*0?777",
+          "File\\.new\\s*\\(.*0?666",
+          "FileUtils\\.mkdir_p\\s*\\(.*0?777"
+        ],
+        "safe_alternatives": [
+          "Use File.chmod(0644, path) for regular files",
+          "Use File.chmod(0600, path) for sensitive files",
+          "Use FileUtils.mkdir_p with mode 0755 for directories",
+          "Use Tempfile for temporary files (creates with restrictive permissions)"
+        ],
+        "false_positive_signals": [
+          "File\\.chmod\\s*\\(\\s*0?(?:600|644|640|700)",
+          "FileUtils\\.chmod\\s*\\(\\s*0?(?:600|644|640)",
+          "Tempfile\\.new|Tempfile\\.create"
+        ]
+      },
+      "c_cpp": {
+        "patterns": [
+          "chmod\\s*\\(.*0?777",
+          "chmod\\s*\\(.*S_IRWXO",
+          "umask\\s*\\(\\s*0\\s*\\)",
+          "fopen\\s*\\(.*\"w\"\\).*chmod.*0?777",
+          "open\\s*\\(.*O_CREAT.*0?777"
+        ],
+        "safe_alternatives": [
+          "Use chmod() with 0644 for regular files, 0600 for sensitive files",
+          "Set umask(077) to restrict default permissions",
+          "Use open() with O_CREAT and restrictive mode (e.g., 0600)",
+          "Use fchmod() after creating files to set proper permissions"
+        ],
+        "false_positive_signals": [
+          "chmod\\s*\\(.*0?(?:600|644|640|700)",
+          "umask\\s*\\(\\s*0?77\\s*\\)",
+          "open\\s*\\(.*O_CREAT.*0?(?:600|644)"
+        ]
+      }
+    }
+  },
+  "CWE-400": {
+    "name": "Uncontrolled Resource Consumption",
+    "severity": "LOW",
+    "languages": {
+      "javascript": {
+        "patterns": [
+          "JSON\\.parse\\s*\\(\\s*req\\.",
+          "new RegExp\\s*\\(\\s*req\\.",
+          "while\\s*\\(\\s*true\\s*\\)",
+          "setInterval\\s*\\(",
+          "body-parser.*limit.*['\"]\\d+mb['\"]",
+          "express\\.json\\s*\\(\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Set request body size limits: express.json({ limit: '100kb' })",
+          "Use timeouts on async operations: Promise.race with a timeout promise",
+          "Implement rate limiting with express-rate-limit",
+          "Use safe-regex or re2 for user-supplied patterns to prevent ReDoS"
+        ],
+        "false_positive_signals": [
+          "limit.*\\d+kb|maxSize|bodyLimit",
+          "rateLimit|rateLimiter|throttle",
+          "setTimeout.*reject|AbortController"
+        ]
+      },
+      "python": {
+        "patterns": [
+          "re\\.compile\\s*\\(.*request\\.",
+          "while\\s+True:",
+          "re\\.match\\s*\\(.*request\\.",
+          "json\\.loads\\s*\\(.*request\\.",
+          "for.*in.*itertools\\.product"
+        ],
+        "safe_alternatives": [
+          "Set timeouts on all external calls: requests.get(url, timeout=5)",
+          "Use Django/Flask request body size limits",
+          "Implement rate limiting with django-ratelimit or flask-limiter",
+          "Use google-re2 for user-supplied regex to prevent ReDoS"
+        ],
+        "false_positive_signals": [
+          "timeout=|max_length|max_size",
+          "ratelimit|rate_limit|throttle",
+          "re2\\.compile|DATA_UPLOAD_MAX"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "io\\.ReadAll\\s*\\(\\s*r\\.Body",
+          "ioutil\\.ReadAll\\s*\\(\\s*r\\.Body",
+          "for\\s*\\{\\s*\\}",
+          "regexp\\.Compile\\s*\\(.*r\\.(?:URL|Form)",
+          "io\\.Copy\\s*\\(.*r\\.Body"
+        ],
+        "safe_alternatives": [
+          "Use http.MaxBytesReader to limit request body size",
+          "Set timeouts on HTTP server: ReadTimeout, WriteTimeout, IdleTimeout",
+          "Use io.LimitReader() to cap the amount of data read",
+          "Implement rate limiting with golang.org/x/time/rate"
+        ],
+        "false_positive_signals": [
+          "MaxBytesReader|LimitReader",
+          "ReadTimeout|WriteTimeout",
+          "rate\\.NewLimiter|rateLimit"
+        ]
+      },
+      "java": {
+        "patterns": [
+          "while\\s*\\(\\s*true\\s*\\)",
+          "Pattern\\.compile\\s*\\(.*getParameter",
+          "IOUtils\\.toByteArray\\s*\\(.*getInputStream",
+          "readAllBytes\\s*\\(.*getInputStream"
+        ],
+        "safe_alternatives": [
+          "Set maxPostSize and maxRequestSize in server configuration",
+          "Use Spring's @RequestBody with @Size validation",
+          "Implement rate limiting with Bucket4j or Guava RateLimiter",
+          "Set connection and read timeouts on all HTTP clients"
+        ],
+        "false_positive_signals": [
+          "maxPostSize|maxRequestSize|@Size",
+          "RateLimiter|Bucket4j|rateLimit",
+          "timeout|connectionTimeout|readTimeout"
+        ]
+      },
+      "php": {
+        "patterns": [
+          "while\\s*\\(\\s*true\\s*\\)",
+          "preg_match\\s*\\(.*\\$_(?:GET|POST|REQUEST)",
+          "file_get_contents\\s*\\(\\s*['\"]php://input['\"]\\)",
+          "ini_set.*max_execution_time.*0"
+        ],
+        "safe_alternatives": [
+          "Set upload_max_filesize and post_max_size in php.ini",
+          "Set max_execution_time and memory_limit appropriately",
+          "Use rate limiting middleware or libraries",
+          "Validate and limit input size before processing"
+        ],
+        "false_positive_signals": [
+          "max_execution_time|memory_limit",
+          "upload_max_filesize|post_max_size",
+          "throttle|rateLimit"
+        ]
+      },
+      "ruby": {
+        "patterns": [
+          "loop\\s+do",
+          "Regexp\\.new\\s*\\(.*params",
+          "while\\s+true",
+          "request\\.body\\.read"
+        ],
+        "safe_alternatives": [
+          "Use Rack::Utils.param_depth_limit for nested params",
+          "Set client_max_body_size in Nginx or Rack::Attack for rate limiting",
+          "Use Rack::Timeout to limit request processing time",
+          "Use re2 gem for user-supplied regex to prevent ReDoS"
+        ],
+        "false_positive_signals": [
+          "Rack::Attack|rack-attack",
+          "Rack::Timeout|timeout",
+          "limit|max_size"
+        ]
+      },
+      "c_cpp": {
+        "patterns": [
+          "while\\s*\\(\\s*1\\s*\\)",
+          "for\\s*\\(\\s*;\\s*;\\s*\\)",
+          "malloc\\s*\\(.*user|malloc\\s*\\(.*input",
+          "realloc\\s*\\(.*user|realloc\\s*\\(.*input"
+        ],
+        "safe_alternatives": [
+          "Validate input sizes before allocating memory",
+          "Set upper bounds on loop iterations and buffer sizes",
+          "Use setrlimit() to cap resource usage (CPU, memory, file descriptors)",
+          "Implement timeouts on all I/O operations"
+        ],
+        "false_positive_signals": [
+          "setrlimit|ulimit",
+          "MAX_SIZE|MAX_LENGTH|BUFFER_LIMIT",
+          "if\\s*\\(.*>\\s*MAX|size.*<.*limit"
+        ]
+      }
+    }
+  },
+  "CWE-119": {
+    "name": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "severity": "CRITICAL",
+    "languages": {
+      "c_cpp": {
+        "patterns": [
+          "strcpy\\s*\\(",
+          "strcat\\s*\\(",
+          "sprintf\\s*\\(",
+          "gets\\s*\\(",
+          "scanf\\s*\\(\\s*\"%s\"",
+          "memcpy\\s*\\(.*sizeof",
+          "strncpy\\s*\\(.*strlen",
+          "vsprintf\\s*\\(",
+          "realpath\\s*\\(.*NULL"
+        ],
+        "safe_alternatives": [
+          "Use strncpy(), strncat(), or strlcpy()/strlcat() with explicit size limits",
+          "Use snprintf() instead of sprintf()",
+          "Use fgets() instead of gets() (gets is removed in C11)",
+          "Use memcpy_s() or explicit bounds checking before memcpy()",
+          "Use std::string and std::vector in C++ to avoid manual buffer management"
+        ],
+        "false_positive_signals": [
+          "strncpy|strlcpy|strncat|strlcat",
+          "snprintf|vsnprintf",
+          "fgets\\s*\\("
+        ]
+      }
+    }
+  },
+  "CWE-416": {
+    "name": "Use After Free",
+    "severity": "HIGH",
+    "languages": {
+      "c_cpp": {
+        "patterns": [
+          "free\\s*\\(\\s*\\w+\\s*\\)",
+          "delete\\s+\\w+\\s*;",
+          "delete\\[\\]\\s+\\w+\\s*;",
+          "realloc\\s*\\(\\s*\\w+\\s*,\\s*0\\s*\\)"
+        ],
+        "safe_alternatives": [
+          "Set pointers to NULL immediately after free(): free(ptr); ptr = NULL;",
+          "Use smart pointers in C++ (std::unique_ptr, std::shared_ptr)",
+          "Use RAII pattern in C++ to tie resource lifetime to object scope",
+          "Use AddressSanitizer (-fsanitize=address) during development to detect UAF"
+        ],
+        "false_positive_signals": [
+          "=\\s*NULL\\s*;|=\\s*nullptr\\s*;",
+          "unique_ptr|shared_ptr|make_unique|make_shared",
+          "AddressSanitizer|ASAN"
+        ]
+      },
+      "rust": {
+        "patterns": [
+          "unsafe\\s*\\{",
+          "\\*mut\\s",
+          "std::mem::transmute",
+          "std::ptr::read",
+          "ManuallyDrop",
+          "Box::from_raw"
+        ],
+        "safe_alternatives": [
+          "Avoid unsafe blocks unless absolutely necessary",
+          "Use Rust's ownership and borrowing system (safe by default)",
+          "Use Rc/Arc for shared ownership instead of raw pointers",
+          "Use cargo clippy and miri to detect unsafe memory patterns"
+        ],
+        "false_positive_signals": [
+          "// SAFETY:|// Safety:",
+          "#\\[deny\\(unsafe_code\\)\\]",
+          "clippy|miri"
+        ]
+      }
+    }
+  },
+  "CWE-190": {
+    "name": "Integer Overflow or Wraparound",
+    "severity": "MEDIUM",
+    "languages": {
+      "c_cpp": {
+        "patterns": [
+          "\\w+\\s*\\+\\s*\\w+\\s*[;><=]",
+          "malloc\\s*\\(.*\\*",
+          "\\(int\\)\\s*\\w+\\s*\\*",
+          "\\(short\\)\\s*\\w+",
+          "\\(unsigned\\).*-",
+          "size_t.*=.*\\*"
+        ],
+        "safe_alternatives": [
+          "Use safe integer arithmetic functions (e.g., __builtin_add_overflow in GCC/Clang)",
+          "Check for overflow before arithmetic: if (a > INT_MAX - b) handle_error()",
+          "Use SafeInt library or similar for checked arithmetic in C++",
+          "Use fixed-width types (int32_t, uint64_t) and validate ranges before operations"
+        ],
+        "false_positive_signals": [
+          "__builtin_.*_overflow",
+          "INT_MAX|INT_MIN|UINT_MAX|SIZE_MAX",
+          "SafeInt|checked_|safe_add|safe_mul"
+        ]
+      },
+      "go": {
+        "patterns": [
+          "int8\\s*\\(|int16\\s*\\(|int32\\s*\\(",
+          "uint8\\s*\\(.*\\+|uint16\\s*\\(.*\\+",
+          "\\w+\\s*\\*\\s*\\w+.*int(?:8|16|32)",
+          "math\\.MaxInt.*\\+"
+        ],
+        "safe_alternatives": [
+          "Use math/big for arbitrary-precision arithmetic when overflow is a concern",
+          "Check against math.MaxInt64/math.MinInt64 before arithmetic",
+          "Use bits.Add or bits.Mul for checked arithmetic",
+          "Validate input ranges before narrowing type conversions"
+        ],
+        "false_positive_signals": [
+          "math\\.MaxInt|math\\.MinInt",
+          "bits\\.Add|bits\\.Mul",
+          "big\\.NewInt|big\\.Int"
+        ]
+      },
+      "rust": {
+        "patterns": [
+          "as u8|as u16|as u32|as i8|as i16|as i32",
+          "\\.wrapping_add\\(|\\.wrapping_mul\\(",
+          "unsafe.*\\bas\\b.*u\\d+",
+          "overflow-checks.*false"
+        ],
+        "safe_alternatives": [
+          "Use checked_add(), checked_mul(), checked_sub() which return Option<T>",
+          "Use saturating_add(), saturating_mul() for clamped arithmetic",
+          "Use TryFrom/TryInto for safe type conversions",
+          "Enable overflow-checks in release profile: [profile.release] overflow-checks = true"
+        ],
+        "false_positive_signals": [
+          "checked_add|checked_mul|checked_sub",
+          "saturating_|overflowing_",
+          "TryFrom|TryInto|try_from|try_into"
+        ]
+      }
+    }
+  }
+}
