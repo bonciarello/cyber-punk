@@ -1,5 +1,5 @@
 {
-  "name": "security-vuln-scanner",
+  "name": "cyber-punk",
   "version": "1.0.0",
   "description": "Automated security vulnerability scanner: fetches CVE/CWE from NVD (NIST), scans code for vulnerable patterns across 9 languages, generates proof-of-concept exploit scripts, and produces detailed security reports with root cause analysis.",
   "author": {

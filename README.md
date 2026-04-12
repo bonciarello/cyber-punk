@@ -38,7 +38,7 @@ export NVD_API_KEY="your-key-here"
 ## Installation
 
 ```bash
-claude plugin install security-vuln-scanner
+claude plugin install cyber-punk
 ```
 
 Or test locally:
@@ -51,7 +51,7 @@ claude --plugin-dir /path/to/SkillCyberPunk
 Invoke the skill in any project:
 
 ```
-/security-vuln-scanner
+/cyber-punk
 ```
 
 Or ask naturally:

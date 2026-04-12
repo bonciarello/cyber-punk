@@ -1,5 +1,5 @@
 ---
-name: security-vuln-scanner
+name: cyber-punk
 description: >
   Use when analyzing project security, checking for CVE/CWE vulnerabilities,
   scanning for insecure code patterns, generating exploit PoCs, or hardening
@@ -118,19 +118,19 @@ Present the detection results to the user and proceed to Phase 2.
 
 2. Determine the skill's asset path. The nvd-fetcher.py script is at:
    ```
-   ${CLAUDE_PLUGIN_ROOT}/skills/security-vuln-scanner/assets/nvd-fetcher.py
+   ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/nvd-fetcher.py
    ```
 
 3. Run the NVD fetcher via Bash:
    ```bash
-   python3 ${CLAUDE_PLUGIN_ROOT}/skills/security-vuln-scanner/assets/nvd-fetcher.py \
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/nvd-fetcher.py \
      --dependencies '{"express": "4.17.1", "lodash": "4.17.20"}' \
      --language javascript \
      --output /tmp/nvd-scan-results.json
    ```
    If user has an API key:
    ```bash
-   python3 ${CLAUDE_PLUGIN_ROOT}/skills/security-vuln-scanner/assets/nvd-fetcher.py \
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/nvd-fetcher.py \
      --dependencies '...' \
      --language javascript \
      --api-key "$NVD_API_KEY" \
@@ -212,7 +212,7 @@ Agent({
   LANGUAGE: {language}
 
   First, Read the CWE pattern database at:
-  ${CLAUDE_PLUGIN_ROOT}/skills/security-vuln-scanner/assets/cwe-patterns.json
+  ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/cwe-patterns.json
 
   Then, for each CWE relevant to {language}:
   1. Use Grep with each regex pattern from the 'patterns' array
@@ -405,7 +405,7 @@ All section titles, descriptions, explanations, and recommendations must be in t
 
 1. Read the report template:
    ```
-   Read: ${CLAUDE_PLUGIN_ROOT}/skills/security-vuln-scanner/assets/report-template.md
+   Read: ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/report-template.md
    ```
 
 2. Generate the report in the user's language by filling in all sections with actual data from Phases 1-4. Sort findings by severity (CRITICAL first).

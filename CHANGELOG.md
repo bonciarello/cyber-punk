@@ -3,7 +3,7 @@
 ## [1.0.0] - 2026-04-11
 
 ### Added
-- Initial release of security-vuln-scanner skill
+- Initial release of cyber-punk skill
 - NVD API integration for CVE/CWE fetching (nvd-fetcher.py)
 - CWE pattern database with 20 CWEs across 9 languages (576 regex patterns)
 - 5-phase analysis pipeline: DETECT, FETCH, ANALYZE, POC, REMEDIATE
