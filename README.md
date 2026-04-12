@@ -2,13 +2,23 @@
 
 A Claude Code plugin that automates security vulnerability analysis for any project.
 
+## Example Use Cases
+
+- **Pre-deploy audit**: Run a full scan before shipping to production to catch SQL injections, XSS, hardcoded secrets, and misconfigurations
+- **Dependency check**: Discover which of your npm/pip/cargo packages have known CVEs and what versions fix them
+- **Code review security pass**: Scan a PR branch for insecure patterns — command injection, path traversal, weak crypto — before merging
+- **Legacy codebase hardening**: Point it at an inherited project to get a prioritized list of vulnerabilities with root cause analysis
+- **Compliance preparation**: Generate a detailed security report (with WHY/HOW/WHAT analysis) for GDPR, PCI-DSS, or SOC 2 audits
+- **Security training**: Use the generated PoC scripts (with `--dry-run`) to understand how real exploits work on your own code
+- **CI/CD pipeline gate**: Integrate the scan into your workflow to block deploys when critical vulnerabilities are found
+
 ## What it does
 
 1. **Detects** your project's tech stack, languages, and dependencies
 2. **Fetches** known CVE/CWE data from the NIST National Vulnerability Database
 3. **Scans** your code for vulnerable patterns using 576 regex rules across 20 CWEs
 4. **Generates** proof-of-concept exploit scripts for confirmed vulnerabilities
-5. **Fixes** vulnerabilities inline and produces a detailed security report
+5. **Reports** a detailed security analysis with root cause, attack vector, and impact for each finding
 
 ## Supported Languages
 
@@ -55,9 +65,8 @@ Or ask naturally:
 
 ## Output
 
-- `security-report-YYYY-MM-DD.md` — Full vulnerability report with findings, severity scores, and fix recommendations
+- `security-report-YYYY-MM-DD.md` — Full vulnerability report with WHY/HOW/WHAT analysis, severity scores, and fix recommendations
 - `security-pocs/` — Proof-of-concept exploit scripts (with `--dry-run` safety mode)
-- Inline fixes applied directly to your source code
 
 ## CWE Coverage
 
