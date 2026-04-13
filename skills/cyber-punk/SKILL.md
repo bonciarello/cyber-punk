@@ -45,8 +45,9 @@ You MUST create a TodoWrite task for each phase and complete them in order:
 1. Phase 1: DETECT — Auto-detect project stack
 2. Phase 2: FETCH — Query NVD API for CVE/CWE data
 3. Phase 3: ANALYZE — Scan code with 3 parallel subagents
-4. Phase 4: POC — Generate exploit scripts (requires user confirmation)
-5. Phase 5: REPORT — Generate security report (report only, no code changes)
+4. Phase 4: INPUT VALIDATION — Analyze all user input fields, verify sanitization and validation
+5. Phase 5: POC — Generate exploit scripts (requires user confirmation)
+6. Phase 6: REPORT — Generate security report (report only, no code changes)
 
 ---
 
@@ -319,17 +320,142 @@ Agent({
 ### Decision Gate
 
 If total findings = 0:
-- Report clean scan, skip Phase 4, generate clean report in Phase 5
-- Still proceed to Phase 5 to document the clean scan
+- Report clean scan, proceed to Phase 4 (input validation is always performed)
 
 If total findings > 0:
-- Present the findings summary
-- Ask user: "Found N vulnerabilities. Shall I generate proof-of-concept exploit scripts for the confirmed vulnerabilities? (This will create scripts in security-pocs/ directory)"
-- Proceed to Phase 4 only if user confirms
+- Present the findings summary and proceed to Phase 4
 
 ---
 
-## Phase 4: POC (Proof-of-Concept Generation)
+## Phase 4: INPUT VALIDATION (User Input Sanitization & Validation Audit)
+
+**Goal**: Find every point where user input enters the application and verify that it is properly sanitized AND validated before being used.
+
+Sanitization and validation are different and BOTH are required:
+- **Sanitization**: cleaning/escaping input to prevent injection (e.g., HTML encoding, SQL escaping)
+- **Validation**: verifying input meets expected constraints (e.g., type, length, format, range, allowed values)
+
+### Steps
+
+1. **Identify all input entry points** — Use Grep to find every place where external/user input enters the application:
+
+   **HTTP/API inputs**:
+   ```
+   Grep: req\.body, req\.query, req\.params, req\.headers, req\.cookies
+   Grep: request\.form, request\.args, request\.json, request\.data, request\.files
+   Grep: r\.FormValue, r\.URL\.Query, r\.Header, r\.Body
+   Grep: @RequestParam, @RequestBody, @PathVariable, @RequestHeader
+   Grep: \$_GET, \$_POST, \$_REQUEST, \$_COOKIE, \$_FILES, \$_SERVER
+   Grep: params\[, params\.require, params\.permit
+   ```
+
+   **Form/UI inputs**:
+   ```
+   Grep: getElementById|querySelector|getElementsByName|FormData
+   Grep: <input|<textarea|<select|contenteditable
+   Grep: onChange|onSubmit|onInput|handleChange|handleSubmit
+   Grep: v-model|ng-model|\[ngModel\]|bind:value
+   ```
+
+   **File system inputs**:
+   ```
+   Grep: upload|multer|formidable|busboy|multipart
+   Grep: readFile.*req|readFile.*param|open.*request
+   ```
+
+   **Database/external inputs**:
+   ```
+   Grep: process\.env|os\.environ|env\.|getenv
+   Grep: argv|sys\.argv|os\.Args|args\[
+   Grep: stdin|readline|input\(|Scanner\(System\.in
+   ```
+
+   **WebSocket/real-time inputs**:
+   ```
+   Grep: socket\.on|ws\.on|message.*event\.data
+   ```
+
+2. **For each input entry point found, trace the data flow** — Read the surrounding code (20-30 lines) to determine:
+
+   a) **Is the input VALIDATED?** Check for:
+   - Type checking (is it a string, number, boolean, etc.?)
+   - Length/size limits (max length, max file size)
+   - Format validation (regex for email, phone, UUID, date, etc.)
+   - Range validation (min/max for numbers, allowed values for enums)
+   - Required field checks (null/undefined/empty checks)
+   - Schema validation (Joi, Zod, Yup, Pydantic, marshmallow, JSON Schema, etc.)
+
+   b) **Is the input SANITIZED?** Check for:
+   - HTML encoding/escaping (DOMPurify, escape(), htmlspecialchars, bleach)
+   - SQL parameterization (prepared statements, bound parameters, ORM usage)
+   - Shell escaping (shlex.quote, escapeshellarg)
+   - Path sanitization (path.normalize, realpath, preventing ../ traversal)
+   - URL encoding (encodeURIComponent, urllib.parse.quote)
+   - Trim/strip of whitespace and control characters
+
+3. **Classify each input field** into one of these categories:
+
+   | Status | Meaning |
+   |--------|---------|
+   | SAFE | Both validated AND sanitized appropriately for its usage context |
+   | PARTIAL | Has validation OR sanitization, but not both |
+   | UNSAFE | Neither validated nor sanitized — raw user input used directly |
+   | UNKNOWN | Could not determine from static analysis — needs manual review |
+
+4. **Build the input validation report** — For each input field, record:
+   - File and line number
+   - Input source (HTTP body, query param, file upload, CLI arg, etc.)
+   - What the input is used for (database query, file path, HTML render, shell command, API call, etc.)
+   - Validation status (what checks exist, what's missing)
+   - Sanitization status (what escaping exists, what's missing)
+   - Risk level: CRITICAL (used in SQL/shell/HTML without any protection), HIGH (partial protection), MEDIUM (mostly protected, minor gaps), LOW (well protected)
+   - Specific recommendation for what validation/sanitization to add
+
+### Language-Specific Patterns
+
+**JavaScript/TypeScript**:
+- Good: Joi, Zod, Yup, express-validator, class-validator, DOMPurify, helmet
+- Bad: direct `req.body.xxx` usage without validation middleware, `innerHTML = userInput`
+
+**Python**:
+- Good: Pydantic, marshmallow, WTForms, Django Forms, bleach, markupsafe
+- Bad: `request.form['x']` used directly in f-strings, `eval(input)`, `os.system(request.data)`
+
+**Go**:
+- Good: go-playground/validator, custom validation functions, html/template (auto-escapes)
+- Bad: `r.FormValue()` used directly in `fmt.Sprintf` for SQL, `template.HTML()` with user data
+
+**Java**:
+- Good: Bean Validation (JSR 380), Hibernate Validator, OWASP Java Encoder, PreparedStatement
+- Bad: `@RequestParam` without `@Valid`, string concatenation in JPQL/HQL
+
+**PHP**:
+- Good: filter_input(), filter_var(), htmlspecialchars(), prepared statements (PDO)
+- Bad: `$_GET['x']` directly in `echo` or `mysql_query()`
+
+**Ruby**:
+- Good: Strong Parameters, ActiveModel validations, ERB auto-escaping, sanitize helper
+- Bad: `params[:x]` without permit, `raw` helper with user data, string interpolation in SQL
+
+### Output
+
+Present input validation findings as a table:
+```
+Input Validation Audit:
+Found N input entry points across M files
+
+| # | File:Line | Source | Used For | Validated | Sanitized | Status | Risk |
+|---|-----------|--------|----------|-----------|-----------|--------|------|
+| 1 | src/api/users.js:15 | req.body.email | DB query | No | No | UNSAFE | CRITICAL |
+| 2 | src/api/users.js:22 | req.body.name | HTML render | Length only | No | PARTIAL | HIGH |
+| 3 | src/auth/login.js:8 | req.body.password | bcrypt hash | Yes (Joi) | Yes (trim) | SAFE | LOW |
+```
+
+Add these findings to the vulnerability list for Phase 5 (POC) and Phase 6 (REPORT).
+
+---
+
+## Phase 5: POC (Proof-of-Concept Generation)
 
 **Goal**: Generate executable exploit scripts for each confirmed vulnerability.
 
@@ -388,9 +514,9 @@ If total findings > 0:
 
 ---
 
-## Phase 5: REPORT (Security Report Generation)
+## Phase 6: REPORT (Security Report Generation)
 
-**Goal**: Generate a comprehensive, human-readable security report. This phase produces ONLY the report — no code modifications, no inline fixes.
+**Goal**: Generate a comprehensive, human-readable security report. This phase produces ONLY the report — no code modifications, no inline fixes. The report includes findings from Phase 3 (code/dependency/config analysis), Phase 4 (input validation audit), and Phase 5 (PoC scripts).
 
 ### Report Language
 
@@ -408,7 +534,7 @@ All section titles, descriptions, explanations, and recommendations must be in t
    Read: ${CLAUDE_PLUGIN_ROOT}/skills/cyber-punk/assets/report-template.md
    ```
 
-2. Generate the report in the user's language by filling in all sections with actual data from Phases 1-4. Sort findings by severity (CRITICAL first).
+2. Generate the report in the user's language by filling in all sections with actual data from Phases 1-5. Sort findings by severity (CRITICAL first). Include a dedicated "Input Validation Audit" section with the table from Phase 4.
 
 3. **For EACH vulnerability, include these three mandatory sections:**
 
@@ -444,6 +570,7 @@ All section titles, descriptions, explanations, and recommendations must be in t
    - Dependency vulnerabilities: N
    - Code pattern vulnerabilities: M  
    - Configuration issues: K
+   - Input fields audited: J (UNSAFE: A | PARTIAL: B | SAFE: C)
    
    Next steps:
    - Review the report for detailed analysis of each vulnerability

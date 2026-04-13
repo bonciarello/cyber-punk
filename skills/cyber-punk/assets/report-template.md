@@ -144,6 +144,48 @@
 
 ---
 
+## Input Validation Audit
+
+<!-- This section reports on EVERY user input entry point found in the application.
+     For each input, assess both SANITIZATION (escaping/cleaning) and VALIDATION 
+     (type, length, format, range checking). -->
+
+**Summary**: {{input_fields_total}} input entry points audited — UNSAFE: {{unsafe_count}} | PARTIAL: {{partial_count}} | SAFE: {{safe_count}} | UNKNOWN: {{unknown_count}}
+
+| # | File:Line | Input Source | Used For | Validated | Sanitized | Status | Risk |
+|---|-----------|-------------|----------|-----------|-----------|--------|------|
+<!-- For each input entry point, add a row.
+     - Input Source: e.g., req.body.email, $_GET['id'], r.FormValue("name")
+     - Used For: e.g., DB query, HTML render, file path, shell command, API call
+     - Validated: what checks exist (type, length, format, schema) or "No"
+     - Sanitized: what escaping exists (parameterized, HTML encoded, escaped) or "No"
+     - Status: SAFE / PARTIAL / UNSAFE / UNKNOWN
+     - Risk: CRITICAL / HIGH / MEDIUM / LOW -->
+
+<!-- For each UNSAFE or PARTIAL input, add a detailed subsection: -->
+
+### Input: {{input_source}} (`{{file}}:{{line}}`)
+
+- **Status**: UNSAFE / PARTIAL
+- **Risk**: CRITICAL / HIGH / MEDIUM / LOW
+- **Input Source**: Where the data comes from (HTTP body, query param, file upload, etc.)
+- **Used For**: What the input is used for downstream (database, HTML, filesystem, etc.)
+- **Current Protection**: What validation/sanitization exists (if any)
+
+#### WHY it happens
+<!-- Why this input lacks proper validation/sanitization -->
+
+#### HOW it happens
+<!-- How an attacker would craft malicious input to exploit this gap -->
+
+#### WHAT could happen
+<!-- Realistic impact: data breach, code execution, privilege escalation, etc. -->
+
+**Missing Validation**: <!-- What validation should be added: type check, length limit, format regex, allowed values, etc. -->
+**Missing Sanitization**: <!-- What sanitization should be added: parameterized query, HTML encoding, shell escaping, path normalization, etc. -->
+
+---
+
 ## Recommendations
 
 ### Priority Actions
@@ -174,3 +216,4 @@
 - **CWE Patterns Checked**: {{cwe_count}} CWEs
 - **Files Scanned**: {{files_scanned_count}}
 - **Dependencies Checked**: {{deps_checked_count}}
+- **Input Entry Points Audited**: {{input_fields_total}}
